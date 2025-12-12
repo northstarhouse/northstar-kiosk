@@ -64,6 +64,10 @@
       const [lastConfirmation, setLastConfirmation] = useState(null);
       const [showCustomCheckInTime, setShowCustomCheckInTime] = useState(false);
       const [customCheckInTime, setCustomCheckInTime] = useState('');
+      const [hoursDataSource, setHoursDataSource] = useState('local'); // local | sheets
+      const [sheetLogs, setSheetLogs] = useState([]);
+      const [sheetLogsLoading, setSheetLogsLoading] = useState(false);
+      const [sheetLogsError, setSheetLogsError] = useState('');
       const LOG_STORAGE_KEY = 'volunteer-logs';
       const LEGACY_LOG_STORAGE_KEY = 'volunteerLogs';
       const MAX_SHIFT_HOURS = 24;
@@ -195,21 +199,93 @@
           }
 
           if (url) {
-            fetch(url, {
+            await fetch(url, {
               redirect: 'follow',
               method: 'POST',
+              mode: 'no-cors',
               headers: {
                 'Content-Type': 'text/plain;charset=utf-8',
               },
               body: JSON.stringify(entry)
-            }).catch(err => {
-              console.log('Sent to Google Sheets');
             });
           }
         } catch (error) {
           console.error('Error sending to Google Sheets:', error);
         }
       };
+
+      const jsonp = (url, timeoutMs = 12000) => {
+        return new Promise((resolve, reject) => {
+          const callbackName = `__jsonp_cb_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const script = document.createElement('script');
+          const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error('Request timed out'));
+          }, timeoutMs);
+
+          const cleanup = () => {
+            clearTimeout(timeout);
+            try {
+              delete window[callbackName];
+            } catch (e) {
+              window[callbackName] = undefined;
+            }
+            if (script.parentNode) script.parentNode.removeChild(script);
+          };
+
+          window[callbackName] = (data) => {
+            cleanup();
+            resolve(data);
+          };
+
+          script.onerror = () => {
+            cleanup();
+            reject(new Error('Failed to load script'));
+          };
+
+          const sep = url.includes('?') ? '&' : '?';
+          script.src = `${url}${sep}callback=${callbackName}`;
+          document.head.appendChild(script);
+        });
+      };
+
+      const fetchVolunteerLogsFromSheet = async () => {
+        const result = await jsonp(`${VOLUNTEER_SHEET_URL}?action=list-volunteer-logs`);
+        if (!result || result.ok !== true || !Array.isArray(result.logs)) {
+          throw new Error('Unexpected response from Sheets endpoint');
+        }
+        return result.logs;
+      };
+
+      useEffect(() => {
+        if (screen !== 'hours-view' || !selectedVolunteerForHours) return;
+
+        let cancelled = false;
+        (async () => {
+          setSheetLogsError('');
+          setSheetLogs([]);
+          setHoursDataSource('local');
+
+          setSheetLogsLoading(true);
+          try {
+            const remoteLogs = await fetchVolunteerLogsFromSheet();
+            if (cancelled) return;
+            setSheetLogs(remoteLogs);
+            setHoursDataSource('sheets');
+          } catch (error) {
+            if (cancelled) return;
+            setSheetLogsError(
+              "Couldn't load hours from Google Sheets (read endpoint not enabled yet). Showing local kiosk data."
+            );
+          } finally {
+            if (!cancelled) setSheetLogsLoading(false);
+          }
+        })();
+
+        return () => {
+          cancelled = true;
+        };
+      }, [screen, selectedVolunteerForHours]);
 
       const addLog = (entry) => {
         const newLogs = [...logs, entry];
@@ -299,12 +375,12 @@
         setCustomCheckInTime('');
       };
 
-      const calculateMonthlyHours = (volunteerName) => {
+      const calculateMonthlyHours = (volunteerName, sourceLogs = logs) => {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
         
-        const volunteerLogs = logs.filter(log => 
+        const volunteerLogs = sourceLogs.filter(log => 
           log.name === volunteerName && 
           log.type === 'volunteer' &&
           new Date(log.timestamp).getMonth() === currentMonth &&
@@ -1040,7 +1116,8 @@ for (let i = 0; i < todayLogs.length; i++) {
 
       // Hours View
       if (screen === 'hours-view') {
-        const { totalHours, entries } = calculateMonthlyHours(selectedVolunteerForHours);
+        const effectiveLogs = hoursDataSource === 'sheets' ? sheetLogs : logs;
+        const { totalHours, entries } = calculateMonthlyHours(selectedVolunteerForHours, effectiveLogs);
         
         return (
           <div className="min-h-screen bg-stone-50 p-8">
@@ -1056,6 +1133,14 @@ for (let i = 0; i < todayLogs.length; i++) {
               </button>
               
               <h2 className="text-4xl font-serif text-stone-800 mb-4 text-center font-semibold">{selectedVolunteerForHours}</h2>
+              <div className="text-center text-stone-600 mb-6">
+                {sheetLogsLoading ? 'Loading hours from Google Sheets…' : `Hours source: ${hoursDataSource}`}
+              </div>
+              {sheetLogsError && (
+                <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-6 text-center text-amber-800 font-semibold">
+                  {sheetLogsError}
+                </div>
+              )}
               
               <div className="bg-emerald-600 text-white p-8 rounded-2xl mb-8 text-center">
                 <p className="text-2xl mb-2 font-normal">This Month's Total Hours</p>
