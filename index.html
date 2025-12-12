@@ -10,6 +10,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { margin: 0; padding: 0; }
+    .screen-container { min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding-top: 2rem; }
   </style>
 </head>
 <body>
@@ -573,7 +574,7 @@
       if (screen === 'main') {
         const onSite = getOnSiteVolunteers();
         return (
-        <div className="min-h-screen bg-stone-50 p-8 flex items-center justify-center">
+        <div className="min-h-screen bg-stone-50 p-8 flex items-start justify-center pt-16">
             <div className="max-w-2xl mx-auto w-full">
               <div className="text-center mb-16">
                 <div className="w-20 h-20 mx-auto mb-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#886c44' }}>
@@ -1306,7 +1307,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Confirmation
       if (screen === 'confirmation') {
         return (
-          <div className="min-h-screen bg-stone-50 p-8 flex items-center justify-center">
+          <div className="min-h-screen bg-stone-50 p-8 flex items-start justify-center pt-16">
             <div className="text-center">
               <div className="text-6xl mb-4">✓</div>
               <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Success!</h2>
@@ -1351,7 +1352,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         }
         
         return (
-          <div className="min-h-screen bg-stone-50 p-8 flex items-center justify-center">
+          <div className="min-h-screen bg-stone-50 p-8 flex items-start justify-center pt-16">
             <div className="text-center">
               <div className="text-6xl mb-4">✓</div>
               <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Successfully Checked Out!</h2>
