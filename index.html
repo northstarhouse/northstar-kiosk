@@ -636,7 +636,7 @@
         const onSite = getOnSiteVolunteers();
 
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -690,7 +690,7 @@
       // Duty Selection
       if (screen === 'duty-select') {
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -734,7 +734,7 @@
         const volunteers = selectedDuty === 'other' ? [] : dutyAreas[selectedDuty] || [];
         
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('duty-select')}
@@ -806,7 +806,7 @@
       // Custom Name Entry
       if (screen === 'custom-name') {
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen(selectedDuty ? 'volunteer-select' : 'on-site')}
@@ -918,7 +918,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         }
         
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('volunteer-select')}
@@ -1024,7 +1024,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Guest Registration
       if (screen === 'guest') {
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1119,7 +1119,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Other Menu
       if (screen === 'other') {
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1152,7 +1152,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Comment/Request Screen
       if (screen === 'comment') {
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -1191,7 +1191,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         const allVolunteers = getAllVolunteerNames();
         
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -1236,7 +1236,7 @@ for (let i = 0; i < todayLogs.length; i++) {
             })();
         
         return (
-          <div className="min-h-screen bg-stone-50 p-8">
+          <div className="min-h-screen bg-stone-50 px-8 pt-4 pb-8">
             <div className="max-w-6xl mx-auto">
               <button
                 onClick={() => {
