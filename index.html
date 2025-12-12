@@ -689,20 +689,41 @@ for (let i = 0; i < todayLogs.length; i++) {
         let customCheckInIso = null;
         let customCheckInError = '';
         if (customCheckInTime) {
-          const [hStr, mStr] = customCheckInTime.split(':');
-          const h = Number(hStr);
-          const m = Number(mStr);
-          const candidate = new Date(now);
-          candidate.setSeconds(0, 0);
-          if (!Number.isNaN(h) && !Number.isNaN(m)) {
-            candidate.setHours(h, m, 0, 0);
+          const raw = customCheckInTime.trim();
+          let hours = null;
+          let minutes = null;
+
+          const hhmmMatch = raw.match(/^(\d{1,2}):(\d{2})$/);
+          if (hhmmMatch) {
+            hours = Number(hhmmMatch[1]);
+            minutes = Number(hhmmMatch[2]);
+          } else {
+            const digitsMatch = raw.match(/^(\d{3,4})$/);
+            if (digitsMatch) {
+              const digits = digitsMatch[1].padStart(4, '0');
+              hours = Number(digits.slice(0, 2));
+              minutes = Number(digits.slice(2, 4));
+            }
+          }
+
+          const isValid =
+            Number.isInteger(hours) &&
+            Number.isInteger(minutes) &&
+            hours >= 0 &&
+            hours <= 23 &&
+            minutes >= 0 &&
+            minutes <= 59;
+
+          if (!isValid) {
+            customCheckInError = 'Enter a valid time (e.g., 9:30 or 0930).';
+          } else {
+            const candidate = new Date(now);
+            candidate.setHours(hours, minutes, 0, 0);
             if (candidate.getTime() > now.getTime()) {
               customCheckInError = 'Please choose a time that is not in the future.';
             } else {
               customCheckInIso = candidate.toISOString();
             }
-          } else {
-            customCheckInError = 'Invalid time.';
           }
         }
         
@@ -758,10 +779,12 @@ for (let i = 0; i < todayLogs.length; i++) {
                     {showCustomCheckInTime && (
                       <div className="mt-6 space-y-4">
                         <label className="block text-lg font-semibold text-stone-700">
-                          Choose check-in time (today)
+                          Enter check-in time (today)
                         </label>
                         <input
-                          type="time"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="HH:MM (e.g., 09:30)"
                           value={customCheckInTime}
                           onChange={(e) => setCustomCheckInTime(e.target.value)}
                           className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
