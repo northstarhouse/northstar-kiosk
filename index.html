@@ -66,6 +66,7 @@
       const [customCheckInTime, setCustomCheckInTime] = useState('');
       const [hoursDataSource, setHoursDataSource] = useState('local'); // local | sheets
       const [sheetLogs, setSheetLogs] = useState([]);
+      const [sheetSessions, setSheetSessions] = useState([]);
       const [sheetLogsLoading, setSheetLogsLoading] = useState(false);
       const [sheetLogsError, setSheetLogsError] = useState('');
       const LOG_STORAGE_KEY = 'volunteer-logs';
@@ -257,6 +258,14 @@
         return result.logs;
       };
 
+      const fetchVolunteerSessionsFromSheet = async () => {
+        const result = await jsonp(`${VOLUNTEER_SHEET_URL}?action=list-sessions`);
+        if (!result || result.ok !== true || !Array.isArray(result.sessions)) {
+          throw new Error('Unexpected response from Sheets sessions endpoint');
+        }
+        return result.sessions;
+      };
+
       useEffect(() => {
         if (screen !== 'hours-view' || !selectedVolunteerForHours) return;
 
@@ -264,19 +273,27 @@
         (async () => {
           setSheetLogsError('');
           setSheetLogs([]);
+          setSheetSessions([]);
           setHoursDataSource('local');
 
           setSheetLogsLoading(true);
           try {
-            const remoteLogs = await fetchVolunteerLogsFromSheet();
+            const remoteSessions = await fetchVolunteerSessionsFromSheet();
             if (cancelled) return;
-            setSheetLogs(remoteLogs);
+            setSheetSessions(remoteSessions);
             setHoursDataSource('sheets');
           } catch (error) {
-            if (cancelled) return;
-            setSheetLogsError(
-              "Couldn't load hours from Google Sheets (read endpoint not enabled yet). Showing local kiosk data."
-            );
+            try {
+              const remoteLogs = await fetchVolunteerLogsFromSheet();
+              if (cancelled) return;
+              setSheetLogs(remoteLogs);
+              setHoursDataSource('sheets');
+            } catch (error2) {
+              if (cancelled) return;
+              setSheetLogsError(
+                "Couldn't load hours from Google Sheets (read endpoint not enabled yet). Showing local kiosk data."
+              );
+            }
           } finally {
             if (!cancelled) setSheetLogsLoading(false);
           }
@@ -453,6 +470,83 @@
         }
         
         return { totalHours: totalHours.toFixed(1), entries };
+      };
+
+      const calculateYearHoursFromLogs = (volunteerName, sourceLogs = logs) => {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+
+        const volunteerLogs = sourceLogs.filter(
+          (log) =>
+            log.name === volunteerName &&
+            log.type === 'volunteer' &&
+            new Date(log.timestamp).getFullYear() === currentYear
+        );
+
+        let totalHours = 0;
+
+        for (let i = 0; i < volunteerLogs.length; i++) {
+          const log = volunteerLogs[i];
+          if (log.action !== 'check-in') continue;
+
+          const checkOut = volunteerLogs.find(
+            (l, idx) => idx > i && l.action === 'check-out' && l.name === volunteerName
+          );
+
+          if (!checkOut) continue;
+
+          const checkInTime = new Date(log.timestamp);
+          const checkOutTime = new Date(checkOut.timestamp);
+          if (Number.isNaN(checkInTime.getTime()) || Number.isNaN(checkOutTime.getTime())) continue;
+
+          totalHours += (checkOutTime - checkInTime) / (1000 * 60 * 60);
+        }
+
+        return totalHours.toFixed(1);
+      };
+
+      const calculateMonthAndYearFromSessions = (volunteerName, sessions) => {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const normalized = (sessions || [])
+          .filter((s) => (s.user || s.name) === volunteerName)
+          .map((s) => {
+            const loginAt = new Date(s.loginAt || s.checkInAt || s.startAt);
+            const logoutAt = new Date(s.logoutAt || s.checkOutAt || s.endAt);
+            const durationMinutes =
+              s.durationMinutes != null
+                ? Number(s.durationMinutes)
+                : Math.max(0, Math.round((logoutAt.getTime() - loginAt.getTime()) / 60000));
+            return { loginAt, logoutAt, durationMinutes, duty: s.duty || '' };
+          })
+          .filter((s) => !Number.isNaN(s.loginAt.getTime()) && !Number.isNaN(s.logoutAt.getTime()));
+
+        const monthSessions = normalized.filter(
+          (s) => s.loginAt.getFullYear() === currentYear && s.loginAt.getMonth() === currentMonth
+        );
+        const yearSessions = normalized.filter((s) => s.loginAt.getFullYear() === currentYear);
+
+        const monthMinutes = monthSessions.reduce((sum, s) => sum + (Number(s.durationMinutes) || 0), 0);
+        const yearMinutes = yearSessions.reduce((sum, s) => sum + (Number(s.durationMinutes) || 0), 0);
+
+        const entries = monthSessions
+          .slice()
+          .sort((a, b) => b.loginAt - a.loginAt)
+          .map((s) => ({
+            date: s.loginAt.toLocaleDateString(),
+            checkIn: s.loginAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            checkOut: s.logoutAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            duty: s.duty,
+            hours: (s.durationMinutes / 60).toFixed(1)
+          }));
+
+        return {
+          monthHours: (monthMinutes / 60).toFixed(1),
+          yearHours: (yearMinutes / 60).toFixed(1),
+          entries
+        };
       };
 
       const getAllVolunteerNames = () => {
@@ -1116,8 +1210,17 @@ for (let i = 0; i < todayLogs.length; i++) {
 
       // Hours View
       if (screen === 'hours-view') {
-        const effectiveLogs = hoursDataSource === 'sheets' ? sheetLogs : logs;
-        const { totalHours, entries } = calculateMonthlyHours(selectedVolunteerForHours, effectiveLogs);
+        const hasSessions = hoursDataSource === 'sheets' && sheetSessions.length > 0;
+        const hasLogs = hoursDataSource === 'sheets' && sheetLogs.length > 0;
+
+        const { monthHours, yearHours, entries } = hasSessions
+          ? calculateMonthAndYearFromSessions(selectedVolunteerForHours, sheetSessions)
+          : (() => {
+              const effectiveLogs = hasLogs ? sheetLogs : logs;
+              const { totalHours, entries } = calculateMonthlyHours(selectedVolunteerForHours, effectiveLogs);
+              const yearHours = calculateYearHoursFromLogs(selectedVolunteerForHours, effectiveLogs);
+              return { monthHours: totalHours, yearHours, entries };
+            })();
         
         return (
           <div className="min-h-screen bg-stone-50 p-8">
@@ -1142,9 +1245,15 @@ for (let i = 0; i < todayLogs.length; i++) {
                 </div>
               )}
               
-              <div className="bg-emerald-600 text-white p-8 rounded-2xl mb-8 text-center">
-                <p className="text-2xl mb-2 font-normal">This Month's Total Hours</p>
-                <p className="text-6xl font-serif font-semibold">{totalHours}</p>
+              <div className="grid grid-cols-2 gap-6 mb-8">
+                <div className="bg-emerald-600 text-white p-8 rounded-2xl text-center">
+                  <p className="text-2xl mb-2 font-normal">This Month</p>
+                  <p className="text-6xl font-serif font-semibold">{monthHours}</p>
+                </div>
+                <div className="bg-sky-600 text-white p-8 rounded-2xl text-center">
+                  <p className="text-2xl mb-2 font-normal">This Year</p>
+                  <p className="text-6xl font-serif font-semibold">{yearHours}</p>
+                </div>
               </div>
               
               <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-6">

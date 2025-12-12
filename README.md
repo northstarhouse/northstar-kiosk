@@ -2,9 +2,13 @@
 
 ## Volunteer Hours (Google Sheets)
 
-The kiosk can *write* logs to Google Sheets via Apps Script (`doPost`). To *read* totals back into the kiosk (so the “Total Hours” view works across devices), your Apps Script must also implement a `doGet` read endpoint.
+The kiosk can write logs to Google Sheets via Apps Script (`doPost`). To read totals back into the kiosk (so the "Volunteer Hours" screen works across devices), your Apps Script must also implement a `doGet` JSONP endpoint.
 
-This kiosk expects a JSONP endpoint at the same Apps Script URL:
+The kiosk will try (in order):
 
-- `GET ?action=list-volunteer-logs&callback=...`
-- Response shape: `{ ok: true, logs: [ { timestamp, name, type: "volunteer", duty, action }, ... ] }`
+- Preferred: `GET ?action=list-sessions&callback=...`
+  - Response: `{ ok: true, sessions: [ { user, loginAt, logoutAt, durationMinutes, duty? }, ... ] }`
+- Fallback: `GET ?action=list-volunteer-logs&callback=...`
+  - Response: `{ ok: true, logs: [ { timestamp, name, type: "volunteer", duty, action }, ... ] }`
+
+See `apps-script-readme.md` for a starter `doGet`.
