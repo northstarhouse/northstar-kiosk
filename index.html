@@ -55,6 +55,8 @@
       const [customName, setCustomName] = useState('');
       const [guestData, setGuestData] = useState({ name: '', guests: 1, email: '', joinList: false });
       const [lastConfirmation, setLastConfirmation] = useState(null);
+      const [showCustomCheckInTime, setShowCustomCheckInTime] = useState(false);
+      const [customCheckInTime, setCustomCheckInTime] = useState('');
       const LOG_STORAGE_KEY = 'volunteer-logs';
       const LEGACY_LOG_STORAGE_KEY = 'volunteerLogs';
       const MAX_SHIFT_HOURS = 24;
@@ -208,9 +210,9 @@
         sendToGoogleSheet(entry);
       };
 
-      const handleVolunteerAction = (action) => {
+      const handleVolunteerAction = (action, timestampOverride = null) => {
         const name = selectedVolunteer === 'other' ? customName : selectedVolunteer;
-        const timestamp = new Date().toISOString();
+        const timestamp = timestampOverride || new Date().toISOString();
         const fallbackDuty = getShiftStatus(name).lastCheckInDuty;
         
         const entry = {
@@ -223,6 +225,8 @@
         
         addLog(entry);
         setLastConfirmation({ type: 'volunteer', action, name });
+        setShowCustomCheckInTime(false);
+        setCustomCheckInTime('');
         
         if (action === 'check-out') {
           setScreen('checkout-confirmation');
@@ -284,6 +288,8 @@
         setSelectedVolunteerForHours(null);
         setCommentText('');
         setLastConfirmation(null);
+        setShowCustomCheckInTime(false);
+        setCustomCheckInTime('');
       };
 
       const calculateMonthlyHours = (volunteerName) => {
@@ -398,17 +404,6 @@
                   </div>
                   <span className="flex-1 text-left">Volunteer Sign In & Out</span>
                 </button>
-
-                <button
-                  onClick={() => setScreen('on-site')}
-                  className="w-full bg-white hover:bg-stone-100 text-stone-800 p-8 rounded-full border-2 border-stone-300 text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-4"
-                >
-                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Users size={24} />
-                  </div>
-                  <span className="flex-1 text-left">Who’s On Site</span>
-                  <span className="text-emerald-700 text-xl font-bold">{onSite.length}</span>
-                </button>
                 
                 <button
                   onClick={() => setScreen('guest')}
@@ -418,6 +413,17 @@
                     <Users size={24} />
                   </div>
                   <span className="flex-1 text-left">Guest Registration & Check In</span>
+                </button>
+
+                <button
+                  onClick={() => setScreen('on-site')}
+                  className="w-full bg-white hover:bg-stone-100 text-stone-800 p-8 rounded-full border-2 border-stone-300 text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-4"
+                >
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Users size={24} />
+                  </div>
+                  <span className="flex-1 text-left">Who’s On Site</span>
+                  <span className="text-blue-700 text-xl font-bold">{onSite.length}</span>
                 </button>
 
                 <button
@@ -650,6 +656,7 @@
       if (screen === 'action-select') {
         const volunteerName = selectedVolunteer === 'other' ? customName : selectedVolunteer;
         const displayDuty = dutyLabels[selectedDuty] || getShiftStatus(volunteerName).lastCheckInDuty || dutyLabels.other;
+        const now = new Date();
         
         const today = new Date();
         const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -677,8 +684,27 @@ for (let i = 0; i < todayLogs.length; i++) {
   }
 }
         
-        const lastLog = todayLogs[todayLogs.length - 1];
         const { isCheckedIn: isCurrentlyCheckedIn } = getShiftStatus(volunteerName);
+
+        let customCheckInIso = null;
+        let customCheckInError = '';
+        if (customCheckInTime) {
+          const [hStr, mStr] = customCheckInTime.split(':');
+          const h = Number(hStr);
+          const m = Number(mStr);
+          const candidate = new Date(now);
+          candidate.setSeconds(0, 0);
+          if (!Number.isNaN(h) && !Number.isNaN(m)) {
+            candidate.setHours(h, m, 0, 0);
+            if (candidate.getTime() > now.getTime()) {
+              customCheckInError = 'Please choose a time that is not in the future.';
+            } else {
+              customCheckInIso = candidate.toISOString();
+            }
+          } else {
+            customCheckInError = 'Invalid time.';
+          }
+        }
         
         return (
           <div className="min-h-screen bg-stone-50 p-8">
@@ -717,8 +743,43 @@ for (let i = 0; i < todayLogs.length; i++) {
                       : 'bg-white hover:bg-stone-100 text-stone-800 border-stone-300 hover:shadow-md'
                   }`}
                 >
-                  Sign In
+                  Sign In (Now)
                 </button>
+
+                {!isCurrentlyCheckedIn && (
+                  <div className="bg-white rounded-2xl border-2 border-stone-300 p-6">
+                    <button
+                      onClick={() => setShowCustomCheckInTime((v) => !v)}
+                      className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 p-6 rounded-full border-2 border-stone-300 text-xl font-semibold transition-all"
+                    >
+                      Sign In (Different Time)
+                    </button>
+
+                    {showCustomCheckInTime && (
+                      <div className="mt-6 space-y-4">
+                        <label className="block text-lg font-semibold text-stone-700">
+                          Choose check-in time (today)
+                        </label>
+                        <input
+                          type="time"
+                          value={customCheckInTime}
+                          onChange={(e) => setCustomCheckInTime(e.target.value)}
+                          className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                        />
+                        {customCheckInError && (
+                          <div className="text-red-700 font-semibold">{customCheckInError}</div>
+                        )}
+                        <button
+                          onClick={() => handleVolunteerAction('check-in', customCheckInIso)}
+                          disabled={!customCheckInIso}
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-6 rounded-full text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                        >
+                          Confirm Sign In
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <button
                   onClick={() => handleVolunteerAction('check-out')}
