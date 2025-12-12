@@ -123,7 +123,8 @@
         loadLogs();
       }, []);
 
-      const loadLogs = () => {
+      const loadLogs = async () => {
+        // First load from localStorage for instant display
         try {
           const stored =
             localStorage.getItem(LOG_STORAGE_KEY) ?? localStorage.getItem(LEGACY_LOG_STORAGE_KEY);
@@ -132,6 +133,17 @@
           }
         } catch (error) {
           console.log('No existing logs found');
+        }
+
+        // Then sync from Google Sheets to get latest data from all devices
+        try {
+          const remoteLogs = await fetchVolunteerLogsFromSheet();
+          if (remoteLogs && remoteLogs.length > 0) {
+            setLogs(remoteLogs);
+            localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(remoteLogs));
+          }
+        } catch (error) {
+          console.log('Could not sync from Google Sheets, using local data:', error);
         }
       };
 
