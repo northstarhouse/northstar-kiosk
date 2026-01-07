@@ -25,8 +25,11 @@
     #root {
       width: 100%;
     }
+    .kiosk-screen {
+      padding-top: 1.5rem;
+    }
     .star-gold {
-      color: #B8860B;
+      color: #886c44;
     }
     .screen-container {
       min-height: 100vh;
@@ -46,6 +49,11 @@
     /* Mobile-friendly responsive adjustments */
     @media (max-width: 480px) {
       body { line-height: 1.4; }
+    }
+    @media (max-width: 640px) {
+      .kiosk-screen {
+        padding-top: 3.5rem;
+      }
     }
     @media (max-width: 360px) {
       html { font-size: 11px; }
@@ -614,7 +622,7 @@
       if (screen === 'main') {
         const onSite = getOnSiteVolunteers();
         return (
-        <div className="min-h-screen bg-stone-50 p-3 md:p-8 flex items-start justify-center pt-6 md:pt-4">
+        <div className="min-h-screen kiosk-screen bg-stone-50 p-3 md:p-8 flex items-start justify-center pt-6 md:pt-4">
             <div className="max-w-2xl mx-auto w-full">
               <div className="text-center mb-4 md:mb-8">
                 <div className="w-12 h-12 md:w-20 md:h-20 mx-auto mb-3 md:mb-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#886c44' }}>
@@ -683,7 +691,7 @@
         const onSite = getOnSiteVolunteers();
 
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -737,7 +745,7 @@
       // Duty Selection
       if (screen === 'duty-select') {
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -781,7 +789,7 @@
         const volunteers = selectedDuty === 'other' ? [] : dutyAreas[selectedDuty] || [];
 
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('duty-select')}
@@ -853,7 +861,7 @@
       // Custom Name Entry
       if (screen === 'custom-name') {
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen(selectedDuty ? 'volunteer-select' : 'on-site')}
@@ -965,7 +973,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         }
         
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('volunteer-select')}
@@ -1071,7 +1079,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Guest Registration
       if (screen === 'guest') {
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1166,7 +1174,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Other Menu
       if (screen === 'other') {
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1199,7 +1207,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Comment/Request Screen
       if (screen === 'comment') {
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -1238,7 +1246,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         const allVolunteers = getAllVolunteerNames();
 
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -1283,7 +1291,7 @@ for (let i = 0; i < todayLogs.length; i++) {
             })();
         
         return (
-          <div className="min-h-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-6xl mx-auto">
               <button
                 onClick={() => {
@@ -1354,7 +1362,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Confirmation
       if (screen === 'confirmation') {
         return (
-          <div className="min-h-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
+          <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
             <div className="text-center">
               <div className="text-6xl mb-4 star-gold">★</div>
               <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Success!</h2>
@@ -1399,7 +1407,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         }
         
         return (
-          <div className="min-h-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
+          <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
             <div className="text-center">
               <div className="text-6xl mb-4 star-gold">★</div>
               <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Successfully Checked Out!</h2>
@@ -1421,6 +1429,7 @@ for (let i = 0; i < todayLogs.length; i++) {
   </script>
 </body>
 </html>
+
 
 
 
