@@ -1237,6 +1237,12 @@ for (let i = 0; i < todayLogs.length; i++) {
                 >
                   Out of Town Notice
                 </button>
+                <button
+                  onClick={() => setScreen('forms')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
+                >
+                  Fillable Forms
+                </button>
               </div>
             </div>
           </div>
@@ -1274,6 +1280,59 @@ for (let i = 0; i < todayLogs.length; i++) {
                 >
                   Submit
                 </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Fillable Forms
+      if (screen === 'forms') {
+        return (
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={() => setScreen('other')}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">Fillable Forms</h2>
+
+              <div className="space-y-3 sm:space-y-6">
+                <a
+                  href="https://drive.google.com/file/d/1cNGysqW__wS2IEKDaNzG1MPo-5JCE-ay/view?usp=drive_link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all text-center"
+                >
+                  In-Kind Donation Form
+                </a>
+                <a
+                  href="https://drive.google.com/file/d/1Vkfh6Z5eM1RPUtw6j8mQjqKM71-YFPrW/view?usp=drive_link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all text-center"
+                >
+                  Reimbursement Form
+                </a>
+                <a
+                  href="https://drive.google.com/file/d/1_-AcaquXeK-O1x9AOubbQNCwoLWzu3f_/view?usp=drive_link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all text-center"
+                >
+                  Board Submission Form
+                </a>
+                <a
+                  href="https://drive.google.com/file/d/1UNzWO6b_-YbKd_rYUxC5GkA2dRQVfcg-/view?usp=drive_link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all text-center"
+                >
+                  Incident & Injury Form
+                </a>
               </div>
             </div>
           </div>
