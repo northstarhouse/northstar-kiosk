@@ -455,12 +455,13 @@
         const entry = {
           timestamp: new Date().toISOString(),
           type: 'out-of-town',
-          sheet: 'OOT Notice',
-          name: outOfTownData.name,
-          date1: outOfTownData.startDate,
-          date2: outOfTownData.endDate,
-          notes: outOfTownData.notes,
-          action: 'submitted'
+          action: 'oot_notice',
+          entry: {
+            name: outOfTownData.name,
+            date1: outOfTownData.startDate,
+            date2: outOfTownData.endDate,
+            notes: outOfTownData.notes
+          }
         };
 
         addLog(entry);
