@@ -12,3 +12,12 @@ The kiosk will try (in order):
   - Response: `{ ok: true, logs: [ { timestamp, name, type: "volunteer", duty, action }, ... ] }`
 
 See `apps-script-readme.md` for a starter `doGet`.
+
+## Build (precompiled kiosk)
+
+The kiosk now ships with precompiled JS for faster mobile load.
+
+```bash
+npm.cmd install
+npm.cmd run build
+```

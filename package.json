@@ -1,0 +1,23 @@
+{
+  "name": "north-star-kiosk",
+  "version": "1.0.0",
+  "description": "## Volunteer Hours (Google Sheets)",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/app.jsx --outfile=assets/app.js --minify --format=iife --jsx-factory=React.createElement --jsx-fragment=React.Fragment --target=es2017"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/northstarhouse/northstar-kiosk.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/northstarhouse/northstar-kiosk/issues"
+  },
+  "homepage": "https://github.com/northstarhouse/northstar-kiosk#readme",
+  "devDependencies": {
+    "esbuild": "^0.27.2"
+  }
+}
