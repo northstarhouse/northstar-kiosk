@@ -99,7 +99,7 @@
         docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
         interiors: ['Bec Freeman', 'Lois Hensel', 'Lisa Robinson'],
         events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco'],
-        volunteerExchange: ['Vince LoFranco', 'Diana Cushway']
+        volunteerExchange: ['Vince LoFranco', 'Diana Cushway', 'Other']
       };
 
       const dutyLabels = {
@@ -584,7 +584,9 @@
       const getAllVolunteerNames = () => {
         const allNames = new Set();
         Object.values(dutyAreas).forEach(names => {
-          names.forEach(name => allNames.add(name));
+          names.forEach(name => {
+            if (name !== 'Other') allNames.add(name);
+          });
         });
         return Array.from(allNames).sort();
       };
@@ -798,11 +800,17 @@
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {volunteers.map(name => {
-                    const { isCheckedIn } = getShiftStatus(name);
+                    const isOther = name === 'Other';
+                    const { isCheckedIn } = isOther ? { isCheckedIn: false } : getShiftStatus(name);
                     return (
                       <button
                         key={name}
                         onClick={() => {
+                          if (isOther) {
+                            setSelectedVolunteer('other');
+                            setScreen('custom-name');
+                            return;
+                          }
                           setSelectedVolunteer(name);
                           setScreen('action-select');
                         }}
@@ -813,15 +821,17 @@
                       </button>
                     );
                   })}
-                  <button
-                    onClick={() => {
-                      setSelectedVolunteer('other');
-                      setScreen('custom-name');
-                    }}
-                    className="bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 p-5 sm:p-6 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all col-span-1 sm:col-span-2"
-                  >
-                    Other
-                  </button>
+                  {selectedDuty !== 'volunteerExchange' && (
+                    <button
+                      onClick={() => {
+                        setSelectedVolunteer('other');
+                        setScreen('custom-name');
+                      }}
+                      className="bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 p-5 sm:p-6 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all col-span-1 sm:col-span-2"
+                    >
+                      Other
+                    </button>
+                  )}
                 </div>
               )}
             </div>
