@@ -93,7 +93,7 @@
       const OOT_NOTICE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcuMhZ1h15zP7IgYhyCBChgkx_mbe23G6756V2_lHNT1grfgKR-AuZxbHt3t806h8-/exec';
 
       const dutyAreas = {
-        construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter'],
+        construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
         board: ['Paula Campbell', 'Wyn Spiller', 'Ken Underwood', 'Rick Panos', 'David Wright', 'Jeff Cereghino', 'Rich Hill'],
         landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes'],
         docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
@@ -589,7 +589,7 @@
       if (screen === 'main') {
         const onSite = getOnSiteVolunteers();
         return (
-        <div className="min-h-screen kiosk-screen bg-stone-50 p-3 md:p-8 flex items-start justify-center pt-6 md:pt-4">
+        <div className="min-h-screen kiosk-screen bg-stone-50 p-3 md:p-8 flex flex-col items-center justify-center pt-6 md:pt-4">
             <div className="max-w-2xl mx-auto w-full">
               <div className="text-center mb-4 md:mb-8">
                 <div className="w-12 h-12 md:w-20 md:h-20 mx-auto mb-3 md:mb-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#886c44' }}>
