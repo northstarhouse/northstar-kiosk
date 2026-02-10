@@ -95,6 +95,7 @@
       const dutyAreas = {
         construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
         board: ['Paula Campbell', 'Wyn Spiller', 'Ken Underwood', 'Rick Panos', 'David Wright', 'Jeff Cereghino', 'Rich Hill'],
+        events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco'],
         landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes'],
         docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
         interiors: ['Bec Freeman', 'Lois Hensel', 'Lisa Robinson']
@@ -103,6 +104,7 @@
       const dutyLabels = {
         construction: 'Construction',
         board: 'Board Member',
+        events: 'Events Team',
         landscape: 'Grounds',
         docents: 'Docent',
         interiors: 'Interiors',
