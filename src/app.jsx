@@ -98,7 +98,8 @@
         landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes'],
         docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
         interiors: ['Bec Freeman', 'Lois Hensel', 'Lisa Robinson'],
-        events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco']
+        events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco'],
+        volunteerExchange: ['Vince LoFranco', 'Diana Cushway']
       };
 
       const dutyLabels = {
@@ -108,6 +109,7 @@
         docents: 'Docent',
         interiors: 'Interiors',
         events: 'Events Team',
+        volunteerExchange: 'Volunteer Exchange',
         other: 'Other'
       };
 
@@ -738,6 +740,7 @@
                     {dutyLabels[duty]}
                   </button>
                 ))}
+                <div className="col-span-1 sm:col-span-2 h-px bg-stone-200 my-1 sm:my-2" aria-hidden="true"></div>
                 <button
                   onClick={() => {
                     setSelectedDuty('other');
