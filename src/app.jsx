@@ -740,7 +740,6 @@
                     {dutyLabels[duty]}
                   </button>
                 ))}
-                <div className="col-span-1 sm:col-span-2 h-px bg-stone-200 my-1 sm:my-2" aria-hidden="true"></div>
                 <button
                   onClick={() => {
                     setSelectedDuty('other');
