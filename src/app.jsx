@@ -1244,7 +1244,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               <div className="w-full flex justify-center">
                 <iframe
-                  src="https://calendar.google.com/calendar/embed?src=thenorthstarhouse%40gmail.com&ctz=America%2FLos_Angeles"
+                  src="https://calendar.google.com/calendar/embed?src=thenorthstarhouse%40gmail.com&ctz=America%2FLos_Angeles&mode=AGENDA"
                   style={{ border: 0 }}
                   width="800"
                   height="600"
