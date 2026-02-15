@@ -38,6 +38,15 @@
       </svg>
     );
 
+    const CalendarIcon = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+    );
+
     const NorthStarKiosk = () => {
       const [screen, setScreen] = useState('main');
       const [selectedDuty, setSelectedDuty] = useState(null);
@@ -1168,6 +1177,12 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               <div className="space-y-3 sm:space-y-6">
                 <button
+                  onClick={() => setScreen('calendar')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
+                >
+                  Calendar
+                </button>
+                <button
                   onClick={() => setScreen('hours-select')}
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
                 >
@@ -1207,6 +1222,36 @@ for (let i = 0; i < todayLogs.length; i++) {
                 >
                   Other Volunteer Resources
                 </a>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Calendar Screen
+      if (screen === 'calendar') {
+        return (
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={() => setScreen('other')}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+
+              <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">Calendar</h2>
+
+              <div className="w-full flex justify-center">
+                <iframe
+                  src="https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=America%2FLos_Angeles&showPrint=0&src=dGhlbm9ydGhzdGFyaG91c2VAZ21haWwuY29t&color=%23d50000"
+                  style={{ border: 'solid 1px #777' }}
+                  width="800"
+                  height="600"
+                  frameBorder="0"
+                  scrolling="no"
+                  className="max-w-full rounded-2xl"
+                ></iframe>
               </div>
             </div>
           </div>
