@@ -96,10 +96,16 @@
     
       const [selectedVolunteerForHours, setSelectedVolunteerForHours] = useState(null);
       const [commentText, setCommentText] = useState('');
+      const [tasks, setTasks] = useState([]);
+      const [tasksLoading, setTasksLoading] = useState(false);
+      const [tasksError, setTasksError] = useState('');
+      const [selectedTask, setSelectedTask] = useState(null);
+      const [taskSignupName, setTaskSignupName] = useState('');
 
       const VOLUNTEER_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwbVk0SB6geUv4xcbxkps06qXwkggMfrD59GMlC_0gRRjQ8p4rr4FNCqgEeY04RrAU_/exec';
       const GUEST_FEEDBACK_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcjKJHX7g_NSx9yHgF3hTr3qUNfQJ0xSjJEqRXEUc7SqtKBsNvsMW7cOC3qcawRbdx/exec';
       const OOT_NOTICE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcuMhZ1h15zP7IgYhyCBChgkx_mbe23G6756V2_lHNT1grfgKR-AuZxbHt3t806h8-/exec';
+      const OPEN_TASKS_SHEET_URL = ''; // TODO: paste your Tasks Apps Script deployment URL here
 
       const dutyAreas = {
         construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
@@ -283,6 +289,30 @@
         return result.sessions;
       };
 
+      const fetchTasksFromSheet = async () => {
+        if (!OPEN_TASKS_SHEET_URL) return [];
+        const result = await jsonp(`${OPEN_TASKS_SHEET_URL}?action=list-tasks`);
+        if (!result || result.ok !== true || !Array.isArray(result.tasks)) {
+          throw new Error('Unexpected response from Tasks endpoint');
+        }
+        return result.tasks;
+      };
+
+      const updateTaskOnSheet = async (task) => {
+        if (!OPEN_TASKS_SHEET_URL) return;
+        try {
+          await fetch(OPEN_TASKS_SHEET_URL, {
+            redirect: 'follow',
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(task)
+          });
+        } catch (error) {
+          console.error('Error updating task on sheet:', error);
+        }
+      };
+
       useEffect(() => {
         if (screen !== 'hours-view' || !selectedVolunteerForHours) return;
 
@@ -320,6 +350,25 @@
           cancelled = true;
         };
       }, [screen, selectedVolunteerForHours]);
+
+      useEffect(() => {
+        if (screen !== 'open-tasks') return;
+        let cancelled = false;
+        setTasksLoading(true);
+        setTasksError('');
+        fetchTasksFromSheet()
+          .then((result) => {
+            if (!cancelled) setTasks(result);
+          })
+          .catch((err) => {
+            if (!cancelled) setTasksError('Could not load tasks. Please try again.');
+            console.error('Error fetching tasks:', err);
+          })
+          .finally(() => {
+            if (!cancelled) setTasksLoading(false);
+          });
+        return () => { cancelled = true; };
+      }, [screen]);
 
       const addLog = (entry) => {
         const newLogs = [...logs, entry];
@@ -431,6 +480,8 @@
         setLastConfirmation(null);
         setShowCustomCheckInTime(false);
         setCustomCheckInTime('');
+        setSelectedTask(null);
+        setTaskSignupName('');
       };
 
       const calculateMonthlyHours = (volunteerName, sourceLogs = logs) => {
@@ -1252,6 +1303,200 @@ for (let i = 0; i < todayLogs.length; i++) {
         );
       }
 
+      // Open Tasks Screen
+      if (screen === 'open-tasks') {
+        const statusColors = {
+          open: 'bg-green-100 text-green-800',
+          'in-progress': 'bg-yellow-100 text-yellow-800',
+        };
+
+        return (
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={resetToMain}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+
+              <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">Open Tasks</h2>
+
+              {tasksLoading && (
+                <div className="text-center text-stone-600 text-lg py-12">Loading tasks...</div>
+              )}
+
+              {tasksError && (
+                <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-6 text-center text-amber-800 font-semibold">
+                  {tasksError}
+                </div>
+              )}
+
+              {!tasksLoading && !tasksError && tasks.length === 0 && (
+                <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-8 text-center text-stone-600 text-xl">
+                  No open tasks right now.
+                </div>
+              )}
+
+              {!tasksLoading && tasks.length > 0 && (
+                <div className="space-y-3 sm:space-y-4">
+                  {tasks.map((task, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedTask(task);
+                        setTaskSignupName('');
+                        setScreen('task-detail');
+                      }}
+                      className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-6 rounded-2xl border-2 border-stone-300 shadow-sm hover:shadow-md transition-all text-left"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="text-lg sm:text-xl font-semibold text-stone-800">{task.taskName}</div>
+                          <div className="text-sm sm:text-base text-stone-600 mt-1">
+                            {task.lead && <span>Lead: {task.lead}</span>}
+                            {task.lead && task.duration && <span> &bull; </span>}
+                            {task.duration && <span>{task.duration}</span>}
+                          </div>
+                          {task.assignedTo && (
+                            <div className="text-sm sm:text-base text-stone-500 mt-1">
+                              Signed up: {task.assignedTo}
+                            </div>
+                          )}
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold flex-shrink-0 ${statusColors[task.status] || statusColors.open}`}>
+                          {task.status === 'in-progress' ? 'In Progress' : 'Open'}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Task Detail Screen
+      if (screen === 'task-detail' && selectedTask) {
+        const allVolunteers = getAllVolunteerNames();
+
+        const handleTaskUpdate = (updates) => {
+          const updated = { ...selectedTask, ...updates };
+          setSelectedTask(updated);
+          setTasks((prev) => prev.map((t) => (t.row === updated.row ? updated : t)));
+          updateTaskOnSheet({ action: 'update-task', row: updated.row, ...updates });
+        };
+
+        return (
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={() => { setSelectedTask(null); setScreen('open-tasks'); }}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+
+              <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-2 sm:mb-4 text-center font-semibold px-2">
+                {selectedTask.taskName}
+              </h2>
+
+              <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
+                <div className="space-y-3 text-base sm:text-lg">
+                  {selectedTask.lead && (
+                    <div><span className="font-semibold text-stone-700">Lead:</span> {selectedTask.lead}</div>
+                  )}
+                  {selectedTask.duration && (
+                    <div><span className="font-semibold text-stone-700">Duration:</span> {selectedTask.duration}</div>
+                  )}
+                  <div>
+                    <span className="font-semibold text-stone-700">Status:</span>{' '}
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                      selectedTask.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
+                      selectedTask.status === 'done' ? 'bg-emerald-100 text-emerald-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {selectedTask.status === 'in-progress' ? 'In Progress' : selectedTask.status === 'done' ? 'Done' : 'Open'}
+                    </span>
+                  </div>
+                  {selectedTask.assignedTo && (
+                    <div><span className="font-semibold text-stone-700">Signed Up:</span> {selectedTask.assignedTo}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sign Up Section */}
+              {!selectedTask.assignedTo && (
+                <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
+                  <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">Sign Up For This Task</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
+                    {allVolunteers.map((name) => (
+                      <button
+                        key={name}
+                        onClick={() => setTaskSignupName(name)}
+                        className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
+                          taskSignupName === name
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={taskSignupName}
+                    onChange={(e) => setTaskSignupName(e.target.value)}
+                    placeholder="Or type your name"
+                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all mb-4"
+                  />
+                  <button
+                    onClick={() => {
+                      if (taskSignupName.trim()) {
+                        handleTaskUpdate({ assignedTo: taskSignupName.trim(), status: 'in-progress' });
+                      }
+                    }}
+                    disabled={!taskSignupName.trim()}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
+
+              {/* Status Actions */}
+              {selectedTask.assignedTo && (
+                <div className="grid gap-3 sm:gap-4">
+                  {selectedTask.status !== 'in-progress' && (
+                    <button
+                      onClick={() => handleTaskUpdate({ status: 'in-progress' })}
+                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                    >
+                      Mark In Progress
+                    </button>
+                  )}
+                  {selectedTask.status !== 'done' && (
+                    <button
+                      onClick={() => {
+                        handleTaskUpdate({ status: 'done' });
+                        setLastConfirmation({ type: 'task-done', taskName: selectedTask.taskName });
+                        setScreen('confirmation');
+                        setTimeout(() => resetToMain(), 2000);
+                      }}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                    >
+                      Mark Done
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
       // Calendar Screen
       if (screen === 'calendar') {
         return (
@@ -1576,6 +1821,8 @@ for (let i = 0; i < todayLogs.length; i++) {
                     ? 'Thanks for visiting!'
                     : lastConfirmation?.type === 'out-of-town'
                       ? 'Out of town notice submitted.'
+                    : lastConfirmation?.type === 'task-done'
+                      ? `Task "${lastConfirmation?.taskName}" marked as done!`
                     : 'Done.'}
               </p>
             </div>
