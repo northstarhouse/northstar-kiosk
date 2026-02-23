@@ -706,23 +706,26 @@
                 <div className="grid grid-cols-3 gap-2 md:gap-4">
                   <button
                     onClick={() => setScreen('open-tasks')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
-                    Open Tasks
+                    <ClipboardList size={16} />
+                    <span>Open Tasks</span>
                   </button>
 
                   <button
                     onClick={() => setScreen('calendar')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
-                    Calendar
+                    <CalendarIcon size={16} />
+                    <span>Calendar</span>
                   </button>
 
                   <button
                     onClick={() => setScreen('other')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
-                    Other
+                    <Pen size={16} />
+                    <span>Other</span>
                   </button>
                 </div>
 
