@@ -105,7 +105,7 @@
       const VOLUNTEER_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwbVk0SB6geUv4xcbxkps06qXwkggMfrD59GMlC_0gRRjQ8p4rr4FNCqgEeY04RrAU_/exec';
       const GUEST_FEEDBACK_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcjKJHX7g_NSx9yHgF3hTr3qUNfQJ0xSjJEqRXEUc7SqtKBsNvsMW7cOC3qcawRbdx/exec';
       const OOT_NOTICE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcuMhZ1h15zP7IgYhyCBChgkx_mbe23G6756V2_lHNT1grfgKR-AuZxbHt3t806h8-/exec';
-      const OPEN_TASKS_SHEET_URL = ''; // TODO: paste your Tasks Apps Script deployment URL here
+      const OPEN_TASKS_SHEET_URL = 'https://script.google.com/macros/s/AKfycby3eHEUf-azuXfXgzyytQSdxgegin6ObbUzjTQ4FjfshrptAtYVz3Hs7rwV8-VHB-IQ/exec';
 
       const dutyAreas = {
         construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
