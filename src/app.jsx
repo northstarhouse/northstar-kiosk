@@ -1357,6 +1357,8 @@ for (let i = 0; i < todayLogs.length; i++) {
                             {task.lead && <span>Lead: {task.lead}</span>}
                             {task.lead && task.duration && <span> &bull; </span>}
                             {task.duration && <span>{task.duration}</span>}
+                            {(task.lead || task.duration) && task.date && <span> &bull; </span>}
+                            {task.date && <span>{task.date}</span>}
                           </div>
                           {task.assignedTo && (
                             <div className="text-sm sm:text-base text-stone-500 mt-1">
@@ -1409,6 +1411,9 @@ for (let i = 0; i < todayLogs.length; i++) {
                   )}
                   {selectedTask.duration && (
                     <div><span className="font-semibold text-stone-700">Duration:</span> {selectedTask.duration}</div>
+                  )}
+                  {selectedTask.date && (
+                    <div><span className="font-semibold text-stone-700">Date:</span> {selectedTask.date}</div>
                   )}
                   <div>
                     <span className="font-semibold text-stone-700">Status:</span>{' '}

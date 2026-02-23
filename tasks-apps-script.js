@@ -1,19 +1,20 @@
 /**
  * Google Apps Script for North Star Kiosk — Open Tasks
  *
+ * Sheet columns:
+ *   A: Task Name | B: Lead | C: Duration | D: Volunteer Signed Up | E: Date | F: Status
+ *
  * SETUP:
- * 1. Create a Google Sheet with columns:
- *    A: Task Name | B: Lead | C: Duration | D: Assigned To | E: Status
- * 2. Open Extensions → Apps Script
- * 3. Paste this code and click Deploy → New deployment → Web app
+ * 1. In your Google Sheet, open Extensions → Apps Script
+ * 2. Paste this code and click Deploy → New deployment → Web app
  *    - Execute as: Me
  *    - Who has access: Anyone
- * 4. Copy the deployment URL and paste it as OPEN_TASKS_SHEET_URL in app.jsx
+ * 3. Copy the deployment URL and paste it as OPEN_TASKS_SHEET_URL in app.jsx
  *
- * The sheet name (tab) must be "Tasks" (or change SHEET_NAME below).
+ * The sheet tab name must match SHEET_NAME below.
  */
 
-var SHEET_NAME = 'Tasks';
+var SHEET_NAME = 'Sheet1';
 
 /* ── GET: read tasks ─────────────────────────────────────── */
 
@@ -47,7 +48,7 @@ function readTasks_() {
 
   var tasks = [];
   for (var i = 1; i < data.length; i++) {  // skip header row
-    var status = (data[i][4] || '').toString().trim().toLowerCase();
+    var status = (data[i][5] || '').toString().trim().toLowerCase();
     if (status === 'done') continue;       // hide completed tasks
 
     tasks.push({
@@ -56,6 +57,7 @@ function readTasks_() {
       lead:       (data[i][1] || '').toString(),
       duration:   (data[i][2] || '').toString(),
       assignedTo: (data[i][3] || '').toString(),
+      date:       (data[i][4] || '').toString(),
       status:     status || 'open'
     });
   }
@@ -93,14 +95,14 @@ function updateTask_(data) {
   var row = data.row;
   if (!row || row < 2) throw new Error('Invalid row: ' + row);
 
-  // Update Assigned To (column D = 4)
+  // Update Volunteer Signed Up (column D = 4)
   if (data.assignedTo !== undefined) {
     sheet.getRange(row, 4).setValue(data.assignedTo);
   }
 
-  // Update Status (column E = 5)
+  // Update Status (column F = 6)
   if (data.status !== undefined) {
-    sheet.getRange(row, 5).setValue(data.status);
+    sheet.getRange(row, 6).setValue(data.status);
   }
 }
 
