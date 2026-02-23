@@ -351,8 +351,7 @@
         };
       }, [screen, selectedVolunteerForHours]);
 
-      useEffect(() => {
-        if (screen !== 'open-tasks') return;
+      const loadTasks = () => {
         let cancelled = false;
         setTasksLoading(true);
         setTasksError('');
@@ -368,6 +367,16 @@
             if (!cancelled) setTasksLoading(false);
           });
         return () => { cancelled = true; };
+      };
+
+      // Preload tasks on app startup
+      useEffect(() => {
+        loadTasks();
+      }, []);
+
+      // Refresh when navigating to open-tasks screen
+      useEffect(() => {
+        if (screen === 'open-tasks') loadTasks();
       }, [screen]);
 
       const addLog = (entry) => {
