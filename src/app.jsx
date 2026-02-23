@@ -708,7 +708,7 @@
                     onClick={() => setScreen('open-tasks')}
                     className="bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 p-3 md:p-6 rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
-                    <ClipboardList size={16} />
+                    <span className="text-purple-600"><ClipboardList size={16} /></span>
                     <span>Open Tasks</span>
                   </button>
 
@@ -716,7 +716,7 @@
                     onClick={() => setScreen('calendar')}
                     className="bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 p-3 md:p-6 rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
-                    <CalendarIcon size={16} />
+                    <span className="text-sky-600"><CalendarIcon size={16} /></span>
                     <span>Calendar</span>
                   </button>
 
@@ -724,7 +724,7 @@
                     onClick={() => setScreen('other')}
                     className="bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 p-3 md:p-6 rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
-                    <Pen size={16} />
+                    <span className="text-amber-600"><Pen size={16} /></span>
                     <span>Other</span>
                   </button>
                 </div>
