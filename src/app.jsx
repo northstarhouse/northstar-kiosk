@@ -633,16 +633,6 @@
                 </button>
 
                 <button
-                  onClick={() => setScreen('guest')}
-                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-8 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2 md:gap-4"
-                >
-                  <div className="w-8 h-8 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Pen size={16} />
-                  </div>
-                  <span className="flex-1 text-left">Guest Registration & Check In</span>
-                </button>
-
-                <button
                   onClick={() => setScreen('on-site')}
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-8 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2 md:gap-4"
                 >
@@ -653,15 +643,37 @@
                   <span className="text-orange-700 text-sm md:text-xl font-bold">{onSite.length}</span>
                 </button>
 
-                <button
-                  onClick={() => setScreen('other')}
-                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-8 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2 md:gap-4"
-                >
-                  <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <ClipboardList size={16} />
-                  </div>
-                  <span className="flex-1 text-left">Other</span>
-                </button>
+                <div className="grid grid-cols-3 gap-2 md:gap-4">
+                  <button
+                    onClick={() => setScreen('open-tasks')}
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-2xl md:rounded-3xl border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
+                  >
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <ClipboardList size={16} />
+                    </div>
+                    <span>Open Tasks</span>
+                  </button>
+
+                  <button
+                    onClick={() => setScreen('calendar')}
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-2xl md:rounded-3xl border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
+                  >
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-sky-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CalendarIcon size={16} />
+                    </div>
+                    <span>Calendar</span>
+                  </button>
+
+                  <button
+                    onClick={() => setScreen('other')}
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-2xl md:rounded-3xl border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
+                  >
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Pen size={16} />
+                    </div>
+                    <span>Other</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1234,7 +1246,7 @@ for (let i = 0; i < todayLogs.length; i++) {
           <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
-                onClick={() => setScreen('other')}
+                onClick={resetToMain}
                 className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
               >
                 <ArrowLeft className="mr-2" /> Back
