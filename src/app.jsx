@@ -674,6 +674,18 @@
                     <span>Other</span>
                   </button>
                 </div>
+
+                <hr className="border-stone-300" />
+
+                <button
+                  onClick={() => setScreen('guest')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-8 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2 md:gap-4"
+                >
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Pen size={16} />
+                  </div>
+                  <span className="flex-1 text-left">Guest Registration</span>
+                </button>
               </div>
             </div>
           </div>
