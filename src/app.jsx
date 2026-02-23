@@ -697,7 +697,7 @@
                 <div className="grid grid-cols-3 gap-2 md:gap-4">
                   <button
                     onClick={() => setScreen('open-tasks')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-2xl md:rounded-3xl border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <ClipboardList size={16} />
@@ -707,7 +707,7 @@
 
                   <button
                     onClick={() => setScreen('calendar')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-2xl md:rounded-3xl border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-sky-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <CalendarIcon size={16} />
@@ -717,7 +717,7 @@
 
                   <button
                     onClick={() => setScreen('other')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-2xl md:rounded-3xl border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-1 md:gap-2"
                   >
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <Pen size={16} />
