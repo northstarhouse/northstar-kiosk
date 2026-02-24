@@ -2,7 +2,10 @@
  * Google Apps Script for North Star Kiosk — Open Tasks
  *
  * Sheet columns:
- *   A: Task Name | B: Lead | C: Duration | D: Volunteer Signed Up | E: Date | F: Status
+ *   A: Task Name | B: Lead | C: Duration | D: Volunteer Signed Up | E: Date | F: Status | G: Type
+ *
+ * Type column (G): "daily" or "one-off" (blank defaults to one-off)
+ * Daily tasks auto-reset to open each morning.
  *
  * SETUP:
  * 1. In your Google Sheet, open Extensions → Apps Script
@@ -10,6 +13,9 @@
  *    - Execute as: Me
  *    - Who has access: Anyone
  * 3. Copy the deployment URL and paste it as OPEN_TASKS_SHEET_URL in app.jsx
+ * 4. Set up a daily trigger: Run resetDailyTasks_ once per day (e.g. midnight)
+ *    - In Apps Script, go to Triggers (clock icon) → Add Trigger
+ *    - Function: resetDailyTasks_, Event: Time-driven, Day timer, Midnight to 1am
  *
  * The sheet tab name must match SHEET_NAME below.
  */
@@ -49,7 +55,10 @@ function readTasks_() {
   var tasks = [];
   for (var i = 1; i < data.length; i++) {  // skip header row
     var status = (data[i][5] || '').toString().trim().toLowerCase();
-    if (status === 'done') continue;       // hide completed tasks
+    var type   = (data[i][6] || '').toString().trim().toLowerCase() || 'one-off';
+
+    // Hide completed one-off tasks; show daily tasks regardless of status
+    if (status === 'done' && type !== 'daily') continue;
 
     tasks.push({
       row:        i + 1,                   // 1-based sheet row (for updates)
@@ -58,7 +67,8 @@ function readTasks_() {
       duration:   (data[i][2] || '').toString(),
       assignedTo: (data[i][3] || '').toString(),
       date:       (data[i][4] || '').toString(),
-      status:     status || 'open'
+      status:     status || 'open',
+      type:       type
     });
   }
   return tasks;
@@ -103,6 +113,29 @@ function updateTask_(data) {
   // Update Status (column F = 6)
   if (data.status !== undefined) {
     sheet.getRange(row, 6).setValue(data.status);
+  }
+}
+
+/* ── Daily reset ─────────────────────────────────────────── */
+
+/**
+ * Resets all "daily" tasks: clears Volunteer Signed Up (D) and sets Status (F) to "open".
+ * Set up a time-driven trigger to run this once per day.
+ */
+function resetDailyTasks_() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return;
+
+  var data = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < data.length; i++) {
+    var type = (data[i][6] || '').toString().trim().toLowerCase();
+    if (type === 'daily') {
+      var row = i + 1;
+      sheet.getRange(row, 4).setValue('');      // Clear Volunteer Signed Up
+      sheet.getRange(row, 6).setValue('open');  // Reset Status
+    }
   }
 }
 

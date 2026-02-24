@@ -1369,9 +1369,14 @@ for (let i = 0; i < todayLogs.length; i++) {
                             </div>
                           )}
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold flex-shrink-0 ${statusColors[task.status] || statusColors.open}`}>
-                          {task.status === 'in-progress' ? 'In Progress' : 'Open'}
-                        </span>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${statusColors[task.status] || statusColors.open}`}>
+                            {task.status === 'in-progress' ? 'In Progress' : task.status === 'done' ? 'Done' : 'Open'}
+                          </span>
+                          {task.type === 'daily' && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">Daily</span>
+                          )}
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -1431,6 +1436,14 @@ for (let i = 0; i < todayLogs.length; i++) {
                   {selectedTask.assignedTo && (
                     <div><span className="font-semibold text-stone-700">Signed Up:</span> {selectedTask.assignedTo}</div>
                   )}
+                  <div>
+                    <span className="font-semibold text-stone-700">Type:</span>{' '}
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                      selectedTask.type === 'daily' ? 'bg-blue-50 text-blue-600' : 'bg-stone-100 text-stone-600'
+                    }`}>
+                      {selectedTask.type === 'daily' ? 'Daily' : 'One-off'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
