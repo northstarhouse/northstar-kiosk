@@ -1308,11 +1308,6 @@ for (let i = 0; i < todayLogs.length; i++) {
 
       // Open Tasks Screen
       if (screen === 'open-tasks') {
-        const statusColors = {
-          open: 'bg-green-100 text-green-800',
-          'in-progress': 'bg-yellow-100 text-yellow-800',
-        };
-
         return (
           <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
@@ -1356,27 +1351,15 @@ for (let i = 0; i < todayLogs.length; i++) {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="text-lg sm:text-xl font-semibold text-stone-800">{task.taskName}</div>
-                          <div className="text-sm sm:text-base text-stone-600 mt-1">
-                            {task.lead && <span>Lead: {task.lead}</span>}
-                            {task.lead && task.duration && <span> &bull; </span>}
-                            {task.duration && <span>{task.duration}</span>}
-                            {(task.lead || task.duration) && task.date && <span> &bull; </span>}
-                            {task.date && <span>{task.date}</span>}
-                          </div>
-                          {task.assignedTo && (
-                            <div className="text-sm sm:text-base text-stone-500 mt-1">
-                              Signed up: {task.assignedTo}
-                            </div>
+                          {task.lead && (
+                            <div className="text-sm sm:text-base text-stone-600 mt-1">Lead: {task.lead}</div>
                           )}
                         </div>
-                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                          <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${statusColors[task.status] || statusColors.open}`}>
-                            {task.status === 'in-progress' ? 'In Progress' : task.status === 'done' ? 'Done' : 'Open'}
-                          </span>
-                          {task.type === 'daily' && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">Daily</span>
-                          )}
-                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold flex-shrink-0 ${
+                          task.type === 'Ongoing Need' ? 'bg-blue-50 text-blue-700' : 'bg-stone-100 text-stone-600'
+                        }`}>
+                          {task.type || 'One-off Need'}
+                        </span>
                       </div>
                     </button>
                   ))}
@@ -1391,11 +1374,16 @@ for (let i = 0; i < todayLogs.length; i++) {
       if (screen === 'task-detail' && selectedTask) {
         const allVolunteers = getAllVolunteerNames();
 
-        const handleTaskUpdate = (updates) => {
-          const updated = { ...selectedTask, ...updates };
-          setSelectedTask(updated);
-          setTasks((prev) => prev.map((t) => (t.row === updated.row ? updated : t)));
-          updateTaskOnSheet({ action: 'update-task', row: updated.row, ...updates });
+        const handleTaskAction = (action) => {
+          const volunteer = taskSignupName.trim();
+          if (!volunteer) return;
+          updateTaskOnSheet({ action: 'update-task', row: selectedTask.row, volunteer, status: action });
+          if (action === 'done') {
+            setTasks((prev) => prev.filter((t) => t.row !== selectedTask.row || t.type === 'Ongoing Need'));
+          }
+          setLastConfirmation({ type: 'task-done', taskName: selectedTask.taskName });
+          setScreen('confirmation');
+          setTimeout(() => resetToMain(), 2000);
         };
 
         return (
@@ -1417,102 +1405,50 @@ for (let i = 0; i < todayLogs.length; i++) {
                   {selectedTask.lead && (
                     <div><span className="font-semibold text-stone-700">Lead:</span> {selectedTask.lead}</div>
                   )}
-                  {selectedTask.duration && (
-                    <div><span className="font-semibold text-stone-700">Duration:</span> {selectedTask.duration}</div>
-                  )}
-                  {selectedTask.date && (
-                    <div><span className="font-semibold text-stone-700">Date:</span> {selectedTask.date}</div>
-                  )}
-                  <div>
-                    <span className="font-semibold text-stone-700">Status:</span>{' '}
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                      selectedTask.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedTask.status === 'done' ? 'bg-emerald-100 text-emerald-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {selectedTask.status === 'in-progress' ? 'In Progress' : selectedTask.status === 'done' ? 'Done' : 'Open'}
-                    </span>
-                  </div>
-                  {selectedTask.assignedTo && (
-                    <div><span className="font-semibold text-stone-700">Signed Up:</span> {selectedTask.assignedTo}</div>
-                  )}
                   <div>
                     <span className="font-semibold text-stone-700">Type:</span>{' '}
                     <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                      selectedTask.type === 'daily' ? 'bg-blue-50 text-blue-600' : 'bg-stone-100 text-stone-600'
+                      selectedTask.type === 'Ongoing Need' ? 'bg-blue-50 text-blue-700' : 'bg-stone-100 text-stone-600'
                     }`}>
-                      {selectedTask.type === 'daily' ? 'Daily' : 'One-off'}
+                      {selectedTask.type || 'One-off Need'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Sign Up Section */}
-              {!selectedTask.assignedTo && (
-                <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
-                  <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">Sign Up For This Task</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
-                    {allVolunteers.map((name) => (
-                      <button
-                        key={name}
-                        onClick={() => setTaskSignupName(name)}
-                        className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
-                          taskSignupName === name
-                            ? 'bg-emerald-600 text-white border-emerald-600'
-                            : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
-                        }`}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    value={taskSignupName}
-                    onChange={(e) => setTaskSignupName(e.target.value)}
-                    placeholder="Or type your name"
-                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all mb-4"
-                  />
-                  <button
-                    onClick={() => {
-                      if (taskSignupName.trim()) {
-                        handleTaskUpdate({ assignedTo: taskSignupName.trim(), status: 'in-progress' });
-                      }
-                    }}
-                    disabled={!taskSignupName.trim()}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                    Sign Up
-                  </button>
-                </div>
-              )}
-
-              {/* Status Actions */}
-              {selectedTask.assignedTo && (
-                <div className="grid gap-3 sm:gap-4">
-                  {selectedTask.status !== 'in-progress' && (
+              {/* Sign Up & Mark Done */}
+              <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
+                <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">I Did This Task</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
+                  {allVolunteers.map((name) => (
                     <button
-                      onClick={() => handleTaskUpdate({ status: 'in-progress' })}
-                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                      key={name}
+                      onClick={() => setTaskSignupName(name)}
+                      className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
+                        taskSignupName === name
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
+                      }`}
                     >
-                      Mark In Progress
+                      {name}
                     </button>
-                  )}
-                  {selectedTask.status !== 'done' && (
-                    <button
-                      onClick={() => {
-                        handleTaskUpdate({ status: 'done' });
-                        setLastConfirmation({ type: 'task-done', taskName: selectedTask.taskName });
-                        setScreen('confirmation');
-                        setTimeout(() => resetToMain(), 2000);
-                      }}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                    >
-                      Mark Done
-                    </button>
-                  )}
+                  ))}
                 </div>
-              )}
+                <input
+                  type="text"
+                  value={taskSignupName}
+                  onChange={(e) => setTaskSignupName(e.target.value)}
+                  placeholder="Or type your name"
+                  className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all mb-4"
+                />
+                <button
+                  onClick={() => handleTaskAction('done')}
+                  disabled={!taskSignupName.trim()}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  Mark Done
+                </button>
+              </div>
             </div>
           </div>
         );
