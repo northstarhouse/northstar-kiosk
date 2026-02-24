@@ -1763,6 +1763,13 @@ for (let i = 0; i < todayLogs.length; i++) {
                   })}
                 </div>
               )}
+
+              <button
+                onClick={resetToMain}
+                className="w-full mt-4 sm:mt-6 bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-5 rounded-full text-base sm:text-lg font-semibold border-2 border-stone-300 shadow-sm hover:shadow-md transition-all"
+              >
+                Back
+              </button>
             </div>
           </div>
         );
@@ -2126,6 +2133,16 @@ for (let i = 0; i < todayLogs.length; i++) {
                   Sign Up
                 </button>
               </div>
+
+              <button
+                onClick={() => {
+                  setSelectedTask(null);
+                  setScreen('open-tasks');
+                }}
+                className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-5 rounded-full text-base sm:text-lg font-semibold border-2 border-stone-300 shadow-sm hover:shadow-md transition-all"
+              >
+                Back
+              </button>
             </div>
           </div>
         );
