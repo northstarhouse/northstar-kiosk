@@ -78,7 +78,9 @@
       });
       const [lastConfirmation, setLastConfirmation] = useState(null);
       const [showCustomCheckInTime, setShowCustomCheckInTime] = useState(false);
-      const [customCheckInTime, setCustomCheckInTime] = useState('');
+      const [customCheckInHour, setCustomCheckInHour] = useState('');
+      const [customCheckInMinute, setCustomCheckInMinute] = useState('');
+      const [customCheckInMeridiem, setCustomCheckInMeridiem] = useState('AM');
       const [hoursDataSource, setHoursDataSource] = useState('local'); // local | sheets
       const [sheetLogs, setSheetLogs] = useState([]);
       const [sheetSessions, setSheetSessions] = useState([]);
@@ -533,7 +535,9 @@
         addLog(entry);
         setLastConfirmation({ type: 'volunteer', action, name });
         setShowCustomCheckInTime(false);
-        setCustomCheckInTime('');
+        setCustomCheckInHour('');
+        setCustomCheckInMinute('');
+        setCustomCheckInMeridiem('AM');
         
         if (action === 'check-out') {
           setScreen('checkout-confirmation');
@@ -718,7 +722,9 @@
         setCommentText('');
         setLastConfirmation(null);
         setShowCustomCheckInTime(false);
-        setCustomCheckInTime('');
+        setCustomCheckInHour('');
+        setCustomCheckInMinute('');
+        setCustomCheckInMeridiem('AM');
         setSelectedTask(null);
         setTaskSignupName('');
         setCheckoutPendingTasks([]);
@@ -1251,37 +1257,29 @@ for (let i = 0; i < todayLogs.length; i++) {
 
         let customCheckInIso = null;
         let customCheckInError = '';
-        if (customCheckInTime) {
-          const raw = customCheckInTime.trim();
-          let hours = null;
-          let minutes = null;
-
-          const hhmmMatch = raw.match(/^(\d{1,2}):(\d{2})$/);
-          if (hhmmMatch) {
-            hours = Number(hhmmMatch[1]);
-            minutes = Number(hhmmMatch[2]);
-          } else {
-            const digitsMatch = raw.match(/^(\d{3,4})$/);
-            if (digitsMatch) {
-              const digits = digitsMatch[1].padStart(4, '0');
-              hours = Number(digits.slice(0, 2));
-              minutes = Number(digits.slice(2, 4));
-            }
-          }
-
+        const hourRaw = customCheckInHour.trim();
+        const minuteRaw = customCheckInMinute.trim();
+        const hasAnyCustomTimeInput = hourRaw || minuteRaw;
+        if (showCustomCheckInTime && hasAnyCustomTimeInput) {
+          const hour = Number(hourRaw);
+          const minute = Number(minuteRaw);
           const isValid =
-            Number.isInteger(hours) &&
-            Number.isInteger(minutes) &&
-            hours >= 0 &&
-            hours <= 23 &&
-            minutes >= 0 &&
-            minutes <= 59;
+            Number.isInteger(hour) &&
+            Number.isInteger(minute) &&
+            hour >= 1 &&
+            hour <= 12 &&
+            minute >= 0 &&
+            minute <= 59;
 
           if (!isValid) {
-            customCheckInError = 'Enter a valid time (e.g., 9:30 or 0930).';
+            customCheckInError = 'Enter time as hour (1-12) and minute (00-59).';
           } else {
+            const hours24 =
+              customCheckInMeridiem === 'PM'
+                ? (hour % 12) + 12
+                : hour % 12;
             const candidate = new Date(now);
-            candidate.setHours(hours, minutes, 0, 0);
+            candidate.setHours(hours24, minute, 0, 0);
             if (candidate.getTime() > now.getTime()) {
               customCheckInError = 'Please choose a time that is not in the future.';
             } else {
@@ -1342,12 +1340,35 @@ for (let i = 0; i < todayLogs.length; i++) {
                           <label className="block text-lg font-semibold text-stone-700">
                             Enter check-in time (today)
                           </label>
-                          <input
-                            type="time"
-                            value={customCheckInTime}
-                            onChange={(e) => setCustomCheckInTime(e.target.value)}
-                            className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
-                          />
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={2}
+                              placeholder="H"
+                              value={customCheckInHour}
+                              onChange={(e) => setCustomCheckInHour(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                              className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all text-center"
+                            />
+                            <span className="text-2xl font-semibold text-stone-600">:</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={2}
+                              placeholder="MM"
+                              value={customCheckInMinute}
+                              onChange={(e) => setCustomCheckInMinute(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                              className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all text-center"
+                            />
+                            <select
+                              value={customCheckInMeridiem}
+                              onChange={(e) => setCustomCheckInMeridiem(e.target.value)}
+                              className="w-28 p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all bg-white"
+                            >
+                              <option value="AM">AM</option>
+                              <option value="PM">PM</option>
+                            </select>
+                          </div>
                           {customCheckInError && (
                             <div className="text-red-700 font-semibold">{customCheckInError}</div>
                           )}
@@ -1355,7 +1376,9 @@ for (let i = 0; i < todayLogs.length; i++) {
                             <button
                               onClick={() => {
                                 setShowCustomCheckInTime(false);
-                                setCustomCheckInTime('');
+                                setCustomCheckInHour('');
+                                setCustomCheckInMinute('');
+                                setCustomCheckInMeridiem('AM');
                               }}
                               className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 p-6 rounded-full border-2 border-stone-300 text-xl font-semibold transition-all"
                             >
