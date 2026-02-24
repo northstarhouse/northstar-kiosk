@@ -51,6 +51,7 @@
       const [screen, setScreen] = useState('main');
       const [selectedDuty, setSelectedDuty] = useState(null);
       const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+      const [actionSelectBackScreen, setActionSelectBackScreen] = useState('volunteer-select');
       const [customName, setCustomName] = useState('');
       const [guestData, setGuestData] = useState({ name: '', guests: 1, email: '', joinList: false });
       const [outOfTownData, setOutOfTownData] = useState({
@@ -494,6 +495,12 @@
         sendToGoogleSheet(entry);
       };
 
+      const openActionSelect = (volunteer, backScreen = 'volunteer-select') => {
+        setSelectedVolunteer(volunteer);
+        setActionSelectBackScreen(backScreen);
+        setScreen('action-select');
+      };
+
       const handleVolunteerAction = (action, timestampOverride = null) => {
         const name = selectedVolunteer === 'other' ? customName : selectedVolunteer;
         const timestamp = timestampOverride || new Date().toISOString();
@@ -590,6 +597,7 @@
         setScreen('main');
         setSelectedDuty(null);
         setSelectedVolunteer(null);
+        setActionSelectBackScreen('volunteer-select');
         setCustomName('');
         setGuestData({ name: '', guests: 1, email: '', joinList: false });
         setOutOfTownData({ name: '', startDate: '', endDate: '', notes: '' });
@@ -901,8 +909,7 @@
                         </div>
                         <button
                           onClick={() => {
-                            setSelectedVolunteer(v.name);
-                            setScreen('action-select');
+                            openActionSelect(v.name, 'on-site');
                           }}
                           className="bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 px-5 sm:px-6 py-2 sm:py-3 rounded-full border-2 border-stone-300 font-semibold transition-all text-sm sm:text-base w-full sm:w-auto"
                         >
@@ -990,8 +997,7 @@
                   <button
                     onClick={() => {
                       if (customName.trim()) {
-                        setSelectedVolunteer('other');
-                        setScreen('action-select');
+                        openActionSelect('other', 'volunteer-select');
                       }
                     }}
                     disabled={!customName.trim()}
@@ -1014,8 +1020,7 @@
                             setScreen('custom-name');
                             return;
                           }
-                          setSelectedVolunteer(name);
-                          setScreen('action-select');
+                          openActionSelect(name, 'volunteer-select');
                         }}
                         className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-5 sm:p-6 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
                       >
@@ -1067,6 +1072,7 @@
                 <button
                   onClick={() => {
                     if (customName.trim()) {
+                      setActionSelectBackScreen(selectedDuty ? 'volunteer-select' : 'on-site');
                       setScreen('action-select');
                     }
                   }}
@@ -1161,7 +1167,7 @@ for (let i = 0; i < todayLogs.length; i++) {
           <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
-                onClick={() => setScreen('volunteer-select')}
+                onClick={() => setScreen(actionSelectBackScreen || 'volunteer-select')}
                 className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
               >
                 <ArrowLeft className="mr-2" /> Back
@@ -2040,22 +2046,30 @@ for (let i = 0; i < todayLogs.length; i++) {
       if (screen === 'confirmation') {
         return (
           <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
-            <div className="text-center">
-              <div className="text-6xl mb-4 star-gold">★</div>
-              <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Success!</h2>
-              <p className="text-xl text-stone-600 mt-4">
-                {lastConfirmation?.type === 'volunteer' && lastConfirmation?.action === 'check-in'
-                  ? `${lastConfirmation?.name} is checked in. Please remember to sign out when leaving.`
-                  : lastConfirmation?.type === 'guest'
-                    ? 'Thanks for visiting!'
-                    : lastConfirmation?.type === 'out-of-town'
-                      ? 'Out of town notice submitted.'
-                    : lastConfirmation?.type === 'task-progress'
-                      ? `Task "${lastConfirmation?.taskName}" marked as in progress.`
-                    : lastConfirmation?.type === 'task-done'
-                      ? `Task "${lastConfirmation?.taskName}" marked as done!`
-                    : 'Done.'}
-              </p>
+            <div className="w-full max-w-4xl">
+              <button
+                onClick={resetToMain}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+              <div className="text-center">
+                <div className="text-6xl mb-4 star-gold">★</div>
+                <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Success!</h2>
+                <p className="text-xl text-stone-600 mt-4">
+                  {lastConfirmation?.type === 'volunteer' && lastConfirmation?.action === 'check-in'
+                    ? `${lastConfirmation?.name} is checked in. Please remember to sign out when leaving.`
+                    : lastConfirmation?.type === 'guest'
+                      ? 'Thanks for visiting!'
+                      : lastConfirmation?.type === 'out-of-town'
+                        ? 'Out of town notice submitted.'
+                      : lastConfirmation?.type === 'task-progress'
+                        ? `Task "${lastConfirmation?.taskName}" marked as in progress.`
+                      : lastConfirmation?.type === 'task-done'
+                        ? `Task "${lastConfirmation?.taskName}" marked as done!`
+                      : 'Done.'}
+                </p>
+              </div>
             </div>
           </div>
         );
@@ -2091,14 +2105,22 @@ for (let i = 0; i < todayLogs.length; i++) {
         
         return (
           <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
-            <div className="text-center">
-              <div className="text-6xl mb-4 star-gold">★</div>
-              <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Successfully Checked Out!</h2>
-              <div className="mt-6 sm:mt-8 bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 sm:p-8 inline-block">
-                <p className="text-2xl text-stone-700 mb-2">Today's Hours</p>
-               <p className="text-5xl font-serif font-semibold text-blue-600">{todayHours.toFixed(1)}</p>
+            <div className="w-full max-w-4xl">
+              <button
+                onClick={resetToMain}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+              <div className="text-center">
+                <div className="text-6xl mb-4 star-gold">★</div>
+                <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Successfully Checked Out!</h2>
+                <div className="mt-6 sm:mt-8 bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 sm:p-8 inline-block">
+                  <p className="text-2xl text-stone-700 mb-2">Today's Hours</p>
+                  <p className="text-5xl font-serif font-semibold text-blue-600">{todayHours.toFixed(1)}</p>
+                </div>
+                <p className="text-lg text-stone-600 mt-6">Thank you for your service!</p>
               </div>
-              <p className="text-lg text-stone-600 mt-6">Thank you for your service!</p>
             </div>
           </div>
         );
