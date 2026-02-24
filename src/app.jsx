@@ -1566,22 +1566,16 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               <div className="space-y-3 sm:space-y-6">
                 <button
-                  onClick={() => setScreen('calendar')}
+                  onClick={() => setScreen('manual-hours')}
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
                 >
-                  Calendar
+                  Add Missed Hours
                 </button>
                 <button
                   onClick={() => setScreen('hours-select')}
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
                 >
                   View Volunteer Hours
-                </button>
-                <button
-                  onClick={() => setScreen('manual-hours')}
-                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
-                >
-                  Add Missed Hours
                 </button>
                 <button
                   onClick={() => setScreen('comment')}
