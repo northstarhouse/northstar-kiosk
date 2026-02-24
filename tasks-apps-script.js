@@ -40,6 +40,7 @@ function doGet(e) {
 
   try {
     if (action === 'list-tasks') {
+      getOrCreateLogSheet_();  // ensure Task Log tab exists
       var tasks = readTasks_();
       return jsonp_(callback, { ok: true, tasks: tasks });
     }
@@ -133,16 +134,19 @@ function updateTask_(data) {
 
 /* ── Task Log ────────────────────────────────────────────── */
 
-function logTaskChange_(taskName, volunteer, status, type) {
+function getOrCreateLogSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var logSheet = ss.getSheetByName(LOG_SHEET_NAME);
-
-  // Auto-create the Task Log tab with headers if it doesn't exist
   if (!logSheet) {
     logSheet = ss.insertSheet(LOG_SHEET_NAME);
     logSheet.appendRow(['Timestamp', 'Task Name', 'Volunteer', 'Status', 'Type']);
     logSheet.getRange(1, 1, 1, 5).setFontWeight('bold');
   }
+  return logSheet;
+}
+
+function logTaskChange_(taskName, volunteer, status, type) {
+  var logSheet = getOrCreateLogSheet_();
 
   logSheet.appendRow([
     new Date(),
