@@ -94,14 +94,6 @@
         }
       }, [logs]);
 
-      useEffect(() => {
-        try {
-          localStorage.setItem(TASK_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(taskAssignments));
-        } catch (error) {
-          console.error('Error saving task assignments:', error);
-        }
-      }, [taskAssignments]);
-    
       const [selectedVolunteerForHours, setSelectedVolunteerForHours] = useState(null);
       const [commentText, setCommentText] = useState('');
       const [tasks, setTasks] = useState([]);
@@ -122,6 +114,14 @@
         }
       });
       const [checkoutPendingTasks, setCheckoutPendingTasks] = useState([]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(TASK_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(taskAssignments));
+        } catch (error) {
+          console.error('Error saving task assignments:', error);
+        }
+      }, [taskAssignments]);
 
       const VOLUNTEER_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwbVk0SB6geUv4xcbxkps06qXwkggMfrD59GMlC_0gRRjQ8p4rr4FNCqgEeY04RrAU_/exec';
       const GUEST_FEEDBACK_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcjKJHX7g_NSx9yHgF3hTr3qUNfQJ0xSjJEqRXEUc7SqtKBsNvsMW7cOC3qcawRbdx/exec';
