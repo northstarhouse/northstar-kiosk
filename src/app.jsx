@@ -899,32 +899,32 @@
                 <div className="grid grid-cols-3 gap-2 md:gap-4">
                   <button
                     onClick={() => setScreen('open-tasks')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 min-h-[88px] md:min-h-[112px]"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 h-[112px] md:h-[136px]"
                   >
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-full flex items-center justify-center">
                       <span className="text-purple-600"><ClipboardList size={16} /></span>
                     </div>
-                    <span>Available Side Jobs</span>
+                    <span className="h-9 md:h-12 flex items-center justify-center text-center leading-tight">Available Side Jobs</span>
                   </button>
 
                   <button
                     onClick={() => setScreen('calendar')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 min-h-[88px] md:min-h-[112px]"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 h-[112px] md:h-[136px]"
                   >
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-sky-100 rounded-full flex items-center justify-center">
                       <span className="text-sky-600"><CalendarIcon size={16} /></span>
                     </div>
-                    <span>Calendar</span>
+                    <span className="h-9 md:h-12 flex items-center justify-center text-center leading-tight">Calendar</span>
                   </button>
 
                   <button
                     onClick={() => setScreen('other')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 min-h-[88px] md:min-h-[112px]"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 h-[112px] md:h-[136px]"
                   >
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-amber-100 rounded-full flex items-center justify-center">
                       <span className="text-amber-600"><Pen size={16} /></span>
                     </div>
-                    <span>Other</span>
+                    <span className="h-9 md:h-12 flex items-center justify-center text-center leading-tight">Other</span>
                   </button>
                 </div>
 
@@ -1708,6 +1708,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 
       // Manual Hours Entry
       if (screen === 'manual-hours') {
+        const manualHoursNameSuggestions = getAllVolunteerNames();
         const canSubmitDateAndHours =
           manualHoursData.name.trim() &&
           manualHoursData.date &&
@@ -1745,9 +1746,16 @@ for (let i = 0; i < todayLogs.length; i++) {
                     type="text"
                     value={manualHoursData.name}
                     onChange={(e) => setManualHoursData({ ...manualHoursData, name: e.target.value })}
+                    list="manual-hours-volunteer-names"
+                    autoComplete="off"
                     className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
                     placeholder="Enter name"
                   />
+                  <datalist id="manual-hours-volunteer-names">
+                    {manualHoursNameSuggestions.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>
