@@ -1688,7 +1688,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Open Tasks Screen
       if (screen === 'open-tasks') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-10 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1778,7 +1778,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Wish List Entry
       if (screen === 'wish-list') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-10 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -2063,7 +2063,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         };
 
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-10 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => {
