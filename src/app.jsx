@@ -96,9 +96,31 @@
 
       const [selectedVolunteerForHours, setSelectedVolunteerForHours] = useState(null);
       const [commentText, setCommentText] = useState('');
-      const [tasks, setTasks] = useState([]);
+      const TASKS_CACHE_KEY = 'open-tasks-cache';
+      const [tasks, setTasks] = useState(() => {
+        if (typeof window === 'undefined') return [];
+        try {
+          const raw = localStorage.getItem(TASKS_CACHE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed?.tasks) ? parsed.tasks : [];
+        } catch {
+          return [];
+        }
+      });
       const [tasksLoading, setTasksLoading] = useState(false);
       const [tasksError, setTasksError] = useState('');
+      const [lastTasksSyncAt, setLastTasksSyncAt] = useState(() => {
+        if (typeof window === 'undefined') return 0;
+        try {
+          const raw = localStorage.getItem(TASKS_CACHE_KEY);
+          if (!raw) return 0;
+          const parsed = JSON.parse(raw);
+          return Number(parsed?.syncedAt) || 0;
+        } catch {
+          return 0;
+        }
+      });
       const [selectedTask, setSelectedTask] = useState(null);
       const [taskSignupName, setTaskSignupName] = useState('');
       const TASK_ASSIGNMENTS_STORAGE_KEY = 'task-assignments';
@@ -336,15 +358,20 @@
 
       const upsertTaskAssignment = (task, volunteer, status = 'in-progress') => {
         const name = (volunteer || '').trim();
-        if (!task || !name) return;
+        const nameKey = name.toLowerCase();
+        if (!task || !nameKey) return;
         const now = new Date().toISOString();
         setTaskAssignments((prev) => {
-          const idx = prev.findIndex((entry) => entry.row === task.row && entry.volunteer === name);
+          const idx = prev.findIndex((entry) => {
+            const entryKey = (entry.volunteerKey || (entry.volunteer || '').trim().toLowerCase());
+            return entry.row === task.row && entryKey === nameKey;
+          });
           const next = {
             row: task.row,
             taskName: task.taskName,
             type: task.type || '',
             volunteer: name,
+            volunteerKey: nameKey,
             status,
             updatedAt: now
           };
@@ -357,17 +384,25 @@
 
       const clearTaskAssignment = (taskRow, volunteer) => {
         const name = (volunteer || '').trim();
-        if (!name) return;
+        const nameKey = name.toLowerCase();
+        if (!nameKey) return;
         setTaskAssignments((prev) =>
-          prev.filter((entry) => !(entry.row === taskRow && entry.volunteer === name))
+          prev.filter((entry) => {
+            const entryKey = (entry.volunteerKey || (entry.volunteer || '').trim().toLowerCase());
+            return !(entry.row === taskRow && entryKey === nameKey);
+          })
         );
       };
 
       const getActiveAssignmentsForVolunteer = (volunteerName) => {
         const name = (volunteerName || '').trim();
-        if (!name) return [];
+        const nameKey = name.toLowerCase();
+        if (!nameKey) return [];
         return taskAssignments.filter(
-          (entry) => entry.volunteer === name && entry.status === 'in-progress'
+          (entry) => {
+            const entryKey = (entry.volunteerKey || (entry.volunteer || '').trim().toLowerCase());
+            return entryKey === nameKey && entry.status === 'in-progress';
+          }
         );
       };
 
@@ -409,20 +444,33 @@
         };
       }, [screen, selectedVolunteerForHours]);
 
-      const loadTasks = () => {
+      const loadTasks = ({ background = false } = {}) => {
         let cancelled = false;
-        setTasksLoading(true);
+        const shouldShowBlockingLoader = !background || tasks.length === 0;
+        if (shouldShowBlockingLoader) setTasksLoading(true);
         setTasksError('');
         fetchTasksFromSheet()
           .then((result) => {
-            if (!cancelled) setTasks(result);
+            if (!cancelled) {
+              setTasks(result);
+              const syncedAt = Date.now();
+              setLastTasksSyncAt(syncedAt);
+              try {
+                localStorage.setItem(
+                  TASKS_CACHE_KEY,
+                  JSON.stringify({ syncedAt, tasks: result })
+                );
+              } catch (error) {
+                console.error('Error caching tasks:', error);
+              }
+            }
           })
           .catch((err) => {
             if (!cancelled) setTasksError('Could not load tasks. Please try again.');
             console.error('Error fetching tasks:', err);
           })
           .finally(() => {
-            if (!cancelled) setTasksLoading(false);
+            if (!cancelled && shouldShowBlockingLoader) setTasksLoading(false);
           });
         return () => { cancelled = true; };
       };
@@ -434,8 +482,11 @@
 
       // Refresh when navigating to open-tasks screen
       useEffect(() => {
-        if (screen === 'open-tasks') loadTasks();
-      }, [screen]);
+        if (screen === 'open-tasks') {
+          const isFresh = Date.now() - lastTasksSyncAt < 60 * 1000;
+          if (!isFresh) loadTasks({ background: true });
+        }
+      }, [screen, lastTasksSyncAt]);
 
       const addLog = (entry) => {
         const newLogs = [...logs, entry];
@@ -1493,8 +1544,12 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">Open Tasks</h2>
 
-              {tasksLoading && (
+              {tasksLoading && tasks.length === 0 && (
                 <div className="text-center text-stone-600 text-lg py-12">Loading tasks...</div>
+              )}
+
+              {tasksLoading && tasks.length > 0 && (
+                <div className="text-center text-stone-500 text-sm py-2">Refreshing tasks...</div>
               )}
 
               {tasksError && (
@@ -1503,13 +1558,13 @@ for (let i = 0; i < todayLogs.length; i++) {
                 </div>
               )}
 
-              {!tasksLoading && !tasksError && tasks.length === 0 && (
+              {!tasksError && tasks.length === 0 && (
                 <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-8 text-center text-stone-600 text-xl">
                   No open tasks right now.
                 </div>
               )}
 
-              {!tasksLoading && tasks.length > 0 && (
+              {tasks.length > 0 && (
                 <div className="space-y-3 sm:space-y-4">
                   {tasks.map((task, idx) => {
                     const inProgressNames = Array.from(
