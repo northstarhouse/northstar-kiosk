@@ -1343,9 +1343,7 @@ for (let i = 0; i < todayLogs.length; i++) {
                             Enter check-in time (today)
                           </label>
                           <input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="HH:MM (e.g., 09:30)"
+                            type="time"
                             value={customCheckInTime}
                             onChange={(e) => setCustomCheckInTime(e.target.value)}
                             className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
