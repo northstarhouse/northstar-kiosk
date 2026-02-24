@@ -1,11 +1,15 @@
 /**
  * Google Apps Script for North Star Kiosk — Open Tasks
  *
- * Sheet columns:
+ * Sheet columns (Sheet1):
  *   A: Task Name | B: Lead | C: Duration | D: Volunteer Signed Up | E: Date | F: Status | G: Type
+ *
+ * Task Log columns (Task Log tab — auto-created):
+ *   A: Timestamp | B: Task Name | C: Volunteer | D: Status | E: Type
  *
  * Type column (G): "daily" or "one-off" (blank defaults to one-off)
  * Daily tasks auto-reset to open each morning.
+ * All status changes are logged to the "Task Log" tab.
  *
  * SETUP:
  * 1. In your Google Sheet, open Extensions → Apps Script
@@ -21,6 +25,7 @@
  */
 
 var SHEET_NAME = 'Sheet1';
+var LOG_SHEET_NAME = 'Task Log';
 
 /* ── GET: read tasks ─────────────────────────────────────── */
 
@@ -105,6 +110,11 @@ function updateTask_(data) {
   var row = data.row;
   if (!row || row < 2) throw new Error('Invalid row: ' + row);
 
+  // Read the current row to get task name and type for logging
+  var rowData = sheet.getRange(row, 1, 1, 7).getValues()[0];
+  var taskName = (rowData[0] || '').toString();
+  var type     = (rowData[6] || '').toString().trim().toLowerCase() || 'one-off';
+
   // Update Volunteer Signed Up (column D = 4)
   if (data.assignedTo !== undefined) {
     sheet.getRange(row, 4).setValue(data.assignedTo);
@@ -114,12 +124,40 @@ function updateTask_(data) {
   if (data.status !== undefined) {
     sheet.getRange(row, 6).setValue(data.status);
   }
+
+  // Log the change
+  var volunteer = data.assignedTo || (rowData[3] || '').toString();
+  var status    = data.status || (rowData[5] || '').toString();
+  logTaskChange_(taskName, volunteer, status, type);
+}
+
+/* ── Task Log ────────────────────────────────────────────── */
+
+function logTaskChange_(taskName, volunteer, status, type) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var logSheet = ss.getSheetByName(LOG_SHEET_NAME);
+
+  // Auto-create the Task Log tab with headers if it doesn't exist
+  if (!logSheet) {
+    logSheet = ss.insertSheet(LOG_SHEET_NAME);
+    logSheet.appendRow(['Timestamp', 'Task Name', 'Volunteer', 'Status', 'Type']);
+    logSheet.getRange(1, 1, 1, 5).setFontWeight('bold');
+  }
+
+  logSheet.appendRow([
+    new Date(),
+    taskName,
+    volunteer,
+    status,
+    type
+  ]);
 }
 
 /* ── Daily reset ─────────────────────────────────────────── */
 
 /**
  * Resets all "daily" tasks: clears Volunteer Signed Up (D) and sets Status (F) to "open".
+ * Logs completed daily tasks before resetting.
  * Set up a time-driven trigger to run this once per day.
  */
 function resetDailyTasks_() {
@@ -130,9 +168,18 @@ function resetDailyTasks_() {
   var data = sheet.getDataRange().getValues();
 
   for (var i = 1; i < data.length; i++) {
-    var type = (data[i][6] || '').toString().trim().toLowerCase();
+    var type   = (data[i][6] || '').toString().trim().toLowerCase();
+    var status = (data[i][5] || '').toString().trim().toLowerCase();
     if (type === 'daily') {
-      var row = i + 1;
+      var row      = i + 1;
+      var taskName = (data[i][0] || '').toString();
+      var volunteer = (data[i][3] || '').toString();
+
+      // Log if it was completed or in-progress before resetting
+      if (status === 'done' || status === 'in-progress') {
+        logTaskChange_(taskName, volunteer, status + ' (daily reset)', type);
+      }
+
       sheet.getRange(row, 4).setValue('');      // Clear Volunteer Signed Up
       sheet.getRange(row, 6).setValue('open');  // Reset Status
     }
