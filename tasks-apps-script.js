@@ -117,8 +117,9 @@ function doPost(e) {
       var rowData = sheet.getRange(data.row, 1, 1, 3).getValues()[0];
       var taskName = (rowData[0] || '').toString();
       var type     = (rowData[2] || '').toString();
+      var volunteer = getVolunteerName_(data);
 
-      logTaskChange_(taskName, data.volunteer || '', data.status || '', type);
+      logTaskChange_(taskName, volunteer, data.status || '', type);
 
       return ContentService.createTextOutput(
         JSON.stringify({ ok: true })
@@ -157,6 +158,21 @@ function logTaskChange_(taskName, volunteer, action, type) {
     action,
     type
   ]);
+}
+
+function getVolunteerName_(data) {
+  var candidates = [
+    data && data.volunteer,
+    data && data.completedBy,
+    data && data.name,
+    data && data.user
+  ];
+
+  for (var i = 0; i < candidates.length; i++) {
+    var value = (candidates[i] || '').toString().trim();
+    if (value) return value;
+  }
+  return '';
 }
 
 /* ── Helpers ─────────────────────────────────────────────── */

@@ -93,6 +93,14 @@
           console.error('Error saving logs:', error);
         }
       }, [logs]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(TASK_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(taskAssignments));
+        } catch (error) {
+          console.error('Error saving task assignments:', error);
+        }
+      }, [taskAssignments]);
     
       const [selectedVolunteerForHours, setSelectedVolunteerForHours] = useState(null);
       const [commentText, setCommentText] = useState('');
@@ -101,6 +109,19 @@
       const [tasksError, setTasksError] = useState('');
       const [selectedTask, setSelectedTask] = useState(null);
       const [taskSignupName, setTaskSignupName] = useState('');
+      const TASK_ASSIGNMENTS_STORAGE_KEY = 'task-assignments';
+      const [taskAssignments, setTaskAssignments] = useState(() => {
+        if (typeof window === 'undefined') return [];
+        try {
+          const raw = localStorage.getItem(TASK_ASSIGNMENTS_STORAGE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      });
+      const [checkoutPendingTasks, setCheckoutPendingTasks] = useState([]);
 
       const VOLUNTEER_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwbVk0SB6geUv4xcbxkps06qXwkggMfrD59GMlC_0gRRjQ8p4rr4FNCqgEeY04RrAU_/exec';
       const GUEST_FEEDBACK_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcjKJHX7g_NSx9yHgF3hTr3qUNfQJ0xSjJEqRXEUc7SqtKBsNvsMW7cOC3qcawRbdx/exec';
@@ -313,6 +334,43 @@
         }
       };
 
+      const upsertTaskAssignment = (task, volunteer, status = 'in-progress') => {
+        const name = (volunteer || '').trim();
+        if (!task || !name) return;
+        const now = new Date().toISOString();
+        setTaskAssignments((prev) => {
+          const idx = prev.findIndex((entry) => entry.row === task.row && entry.volunteer === name);
+          const next = {
+            row: task.row,
+            taskName: task.taskName,
+            type: task.type || '',
+            volunteer: name,
+            status,
+            updatedAt: now
+          };
+          if (idx >= 0) {
+            return prev.map((entry, i) => (i === idx ? { ...entry, ...next } : entry));
+          }
+          return [...prev, next];
+        });
+      };
+
+      const clearTaskAssignment = (taskRow, volunteer) => {
+        const name = (volunteer || '').trim();
+        if (!name) return;
+        setTaskAssignments((prev) =>
+          prev.filter((entry) => !(entry.row === taskRow && entry.volunteer === name))
+        );
+      };
+
+      const getActiveAssignmentsForVolunteer = (volunteerName) => {
+        const name = (volunteerName || '').trim();
+        if (!name) return [];
+        return taskAssignments.filter(
+          (entry) => entry.volunteer === name && entry.status === 'in-progress'
+        );
+      };
+
       useEffect(() => {
         if (screen !== 'hours-view' || !selectedVolunteerForHours) return;
 
@@ -491,6 +549,7 @@
         setCustomCheckInTime('');
         setSelectedTask(null);
         setTaskSignupName('');
+        setCheckoutPendingTasks([]);
       };
 
       const calculateMonthlyHours = (volunteerName, sourceLogs = logs) => {
@@ -998,6 +1057,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 }
         
         const { isCheckedIn: isCurrentlyCheckedIn } = getShiftStatus(volunteerName);
+        const activeAssignments = getActiveAssignmentsForVolunteer(volunteerName);
 
         let customCheckInIso = null;
         let customCheckInError = '';
@@ -1128,7 +1188,14 @@ for (let i = 0; i < todayLogs.length; i++) {
                 )}
                 
                 <button
-                  onClick={() => handleVolunteerAction('check-out')}
+                  onClick={() => {
+                    if (activeAssignments.length > 0) {
+                      setCheckoutPendingTasks(activeAssignments);
+                      setScreen('checkout-task-status');
+                      return;
+                    }
+                    handleVolunteerAction('check-out');
+                  }}
                   disabled={!isCurrentlyCheckedIn}
                   className={`p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 text-lg sm:text-2xl font-semibold shadow-sm transition-all ${
                     !isCurrentlyCheckedIn
@@ -1138,6 +1205,112 @@ for (let i = 0; i < todayLogs.length; i++) {
                 >
                   Sign Out
                 </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Task Status At Sign Out
+      if (screen === 'checkout-task-status') {
+        const volunteerName = selectedVolunteer === 'other' ? customName : selectedVolunteer;
+        const currentTask = checkoutPendingTasks[0];
+
+        const handleCheckoutTaskStatus = (status) => {
+          if (!currentTask) {
+            handleVolunteerAction('check-out');
+            return;
+          }
+
+          const volunteer = (volunteerName || '').trim();
+          updateTaskOnSheet({
+            action: 'update-task',
+            row: currentTask.row,
+            volunteer,
+            completedBy: volunteer,
+            name: volunteer,
+            status
+          });
+
+          if (status === 'done') {
+            clearTaskAssignment(currentTask.row, volunteer);
+            setTasks((prev) => prev.filter((t) => t.row !== currentTask.row || t.type === 'Ongoing Need'));
+          } else {
+            upsertTaskAssignment(currentTask, volunteer, 'in-progress');
+          }
+
+          setCheckoutPendingTasks((prev) => {
+            const remaining = prev.slice(1);
+            if (remaining.length === 0) {
+              handleVolunteerAction('check-out');
+            }
+            return remaining;
+          });
+        };
+
+        if (!currentTask) {
+          return (
+            <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+              <div className="max-w-4xl mx-auto">
+                <button
+                  onClick={() => setScreen('action-select')}
+                  className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+                >
+                  <ArrowLeft className="mr-2" /> Back
+                </button>
+                <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 text-center">
+                  <p className="text-lg sm:text-2xl text-stone-700 mb-6">No active task signups found.</p>
+                  <button
+                    onClick={() => handleVolunteerAction('check-out')}
+                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-full text-lg font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    Continue Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={() => setScreen('action-select')}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+
+              <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">
+                Task Status
+              </h2>
+
+              <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8">
+                <p className="text-sm sm:text-base text-stone-500 text-center mb-2">
+                  {volunteerName}
+                </p>
+                <p className="text-lg sm:text-2xl text-stone-700 text-center mb-2">
+                  "{currentTask.taskName}"
+                </p>
+                <p className="text-base sm:text-lg text-stone-600 text-center mb-6 sm:mb-8">
+                  What's the status of this task?
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    onClick={() => handleCheckoutTaskStatus('done')}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    Completed
+                  </button>
+                  <button
+                    onClick={() => handleCheckoutTaskStatus('in-progress')}
+                    className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-6 rounded-full text-lg sm:text-xl font-semibold border-2 border-stone-300 shadow-sm hover:shadow-md transition-all"
+                  >
+                    Still In Progress
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1343,7 +1516,7 @@ for (let i = 0; i < todayLogs.length; i++) {
                       key={idx}
                       onClick={() => {
                         setSelectedTask(task);
-                        setTaskSignupName('');
+                        setTaskSignupName(selectedVolunteer === 'other' ? customName : selectedVolunteer || '');
                         setScreen('task-detail');
                       }}
                       className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-6 rounded-2xl border-2 border-stone-300 shadow-sm hover:shadow-md transition-all text-left"
@@ -1372,13 +1545,30 @@ for (let i = 0; i < todayLogs.length; i++) {
 
       // Task Detail Screen
       if (screen === 'task-detail' && selectedTask) {
-        const allVolunteers = getAllVolunteerNames();
+        const onSiteVolunteers = getOnSiteVolunteers().map((v) => v.name);
 
         const handleTaskAction = (action) => {
           const volunteer = taskSignupName.trim();
           if (!volunteer) return;
-          updateTaskOnSheet({ action: 'update-task', row: selectedTask.row, volunteer, status: action });
+          updateTaskOnSheet({
+            action: 'update-task',
+            row: selectedTask.row,
+            volunteer,
+            completedBy: volunteer,
+            name: volunteer,
+            status: action
+          });
+
+          if (action === 'in-progress') {
+            upsertTaskAssignment(selectedTask, volunteer, 'in-progress');
+            setLastConfirmation({ type: 'task-progress', taskName: selectedTask.taskName });
+            setScreen('confirmation');
+            setTimeout(() => resetToMain(), 2000);
+            return;
+          }
+
           if (action === 'done') {
+            clearTaskAssignment(selectedTask.row, volunteer);
             setTasks((prev) => prev.filter((t) => t.row !== selectedTask.row || t.type === 'Ongoing Need'));
           }
           setLastConfirmation({ type: 'task-done', taskName: selectedTask.taskName });
@@ -1416,24 +1606,30 @@ for (let i = 0; i < todayLogs.length; i++) {
                 </div>
               </div>
 
-              {/* Sign Up & Mark Done */}
+              {/* Sign Up & Status */}
               <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
-                <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">I Did This Task</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
-                  {allVolunteers.map((name) => (
-                    <button
-                      key={name}
-                      onClick={() => setTaskSignupName(name)}
-                      className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
-                        taskSignupName === name
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
-                      }`}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
+                <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">Task Status</h3>
+                {onSiteVolunteers.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
+                    {onSiteVolunteers.map((name) => (
+                      <button
+                        key={name}
+                        onClick={() => setTaskSignupName(name)}
+                        className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
+                          taskSignupName === name
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mb-4 text-sm sm:text-base text-stone-600 text-center">
+                    No volunteers are currently checked in.
+                  </div>
+                )}
                 <input
                   type="text"
                   value={taskSignupName}
@@ -1441,13 +1637,22 @@ for (let i = 0; i < todayLogs.length; i++) {
                   placeholder="Or type your name"
                   className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all mb-4"
                 />
-                <button
-                  onClick={() => handleTaskAction('done')}
-                  disabled={!taskSignupName.trim()}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                >
-                  Mark Done
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    onClick={() => handleTaskAction('in-progress')}
+                    disabled={!taskSignupName.trim()}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    In Progress
+                  </button>
+                  <button
+                    onClick={() => handleTaskAction('done')}
+                    disabled={!taskSignupName.trim()}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    Completed
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1778,6 +1983,8 @@ for (let i = 0; i < todayLogs.length; i++) {
                     ? 'Thanks for visiting!'
                     : lastConfirmation?.type === 'out-of-town'
                       ? 'Out of town notice submitted.'
+                    : lastConfirmation?.type === 'task-progress'
+                      ? `Task "${lastConfirmation?.taskName}" marked as in progress.`
                     : lastConfirmation?.type === 'task-done'
                       ? `Task "${lastConfirmation?.taskName}" marked as done!`
                     : 'Done.'}
