@@ -1,4 +1,4 @@
-﻿const { useState, useEffect } = React;
+const { useState, useEffect } = React;
 
     // Icon components
     const ArrowLeft = () => (
@@ -997,7 +997,7 @@
         const onSite = getOnSiteVolunteers();
 
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1050,7 +1050,7 @@
       // Duty Selection
       if (screen === 'duty-select') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1094,7 +1094,7 @@
         const volunteers = selectedDuty === 'other' ? [] : dutyAreas[selectedDuty] || [];
 
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('duty-select')}
@@ -1172,7 +1172,7 @@
       // Custom Name Entry
       if (screen === 'custom-name') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen(selectedDuty ? 'volunteer-select' : 'on-site')}
@@ -1278,7 +1278,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         }
         
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen(actionSelectBackScreen || 'volunteer-select')}
@@ -1294,7 +1294,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               {isCurrentlyCheckedIn && (
                 <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-3 sm:p-4 mb-4 sm:mb-6 text-center mx-2">
-                  <p className="text-green-700 font-semibold text-base sm:text-lg"><span className="star-gold">★</span> Currently Checked In</p>
+                  <p className="text-green-700 font-semibold text-base sm:text-lg"><span className="star-gold">?</span> Currently Checked In</p>
                 </div>
               )}
 
@@ -1450,7 +1450,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 
         if (!currentTask) {
           return (
-            <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
               <div className="max-w-4xl mx-auto">
                 <button
                   onClick={() => setScreen('action-select')}
@@ -1473,7 +1473,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         }
 
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('action-select')}
@@ -1520,7 +1520,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Guest Registration
       if (screen === 'guest') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1615,7 +1615,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Other Menu
       if (screen === 'other') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1688,7 +1688,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Open Tasks Screen
       if (screen === 'open-tasks') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-10 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -1778,7 +1778,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Wish List Entry
       if (screen === 'wish-list') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-10 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -1894,7 +1894,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         const canSubmit = manualHoursData.useSpecificTimes ? canSubmitDateAndTime : canSubmitDateAndHours;
 
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -2063,7 +2063,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         };
 
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-10 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => {
@@ -2151,7 +2151,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Calendar Screen
       if (screen === 'calendar') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={resetToMain}
@@ -2181,7 +2181,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Comment/Request Screen
       if (screen === 'comment') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -2218,7 +2218,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Fillable Forms
       if (screen === 'forms') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -2271,7 +2271,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Out of Town Notice
       if (screen === 'out-of-town') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-3 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -2345,7 +2345,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         const allVolunteers = getAllVolunteerNames();
 
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={() => setScreen('other')}
@@ -2390,7 +2390,7 @@ for (let i = 0; i < todayLogs.length; i++) {
             })();
         
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-20 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-6xl mx-auto">
               <button
                 onClick={() => {
@@ -2470,7 +2470,7 @@ for (let i = 0; i < todayLogs.length; i++) {
                 <ArrowLeft className="mr-2" /> Back
               </button>
               <div className="text-center">
-                <div className="text-6xl mb-4 star-gold">★</div>
+                <div className="text-6xl mb-4 star-gold">?</div>
                 <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Success!</h2>
                 <p className="text-xl text-stone-600 mt-4">
                   {lastConfirmation?.type === 'volunteer' && lastConfirmation?.action === 'check-in'
@@ -2533,7 +2533,7 @@ for (let i = 0; i < todayLogs.length; i++) {
                 <ArrowLeft className="mr-2" /> Back
               </button>
               <div className="text-center">
-                <div className="text-6xl mb-4 star-gold">★</div>
+                <div className="text-6xl mb-4 star-gold">?</div>
                 <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Successfully Checked Out!</h2>
                 <div className="mt-6 sm:mt-8 bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 sm:p-8 inline-block">
                   <p className="text-2xl text-stone-700 mb-2">Today's Hours</p>
@@ -2551,3 +2551,5 @@ for (let i = 0; i < todayLogs.length; i++) {
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<NorthStarKiosk />);
+
+
