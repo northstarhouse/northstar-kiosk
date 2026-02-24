@@ -904,7 +904,7 @@ const { useState, useEffect } = React;
       if (screen === 'main') {
         const onSite = getOnSiteVolunteers();
         return (
-        <div className="min-h-screen kiosk-screen bg-stone-50 p-3 md:p-8 flex flex-col items-center justify-center pt-6 md:pt-4">
+        <div className="min-h-screen kiosk-screen bg-stone-50 p-3 md:p-8 flex flex-col items-center justify-center pt-20 md:pt-4">
             <div className="max-w-2xl mx-auto w-full">
               <div className="text-center mb-4 md:mb-8">
                 <div className="w-12 h-12 md:w-20 md:h-20 mx-auto mb-3 md:mb-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#886c44' }}>
@@ -2461,7 +2461,7 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Confirmation
       if (screen === 'confirmation') {
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
+          <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-20 sm:pt-6">
             <div className="w-full max-w-4xl">
               <button
                 onClick={resetToMain}
@@ -2524,7 +2524,7 @@ for (let i = 0; i < todayLogs.length; i++) {
         }
         
         return (
-          <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-6">
+          <div className="min-h-screen kiosk-screen bg-stone-50 p-4 sm:p-8 flex items-start justify-center pt-20 sm:pt-6">
             <div className="w-full max-w-4xl">
               <button
                 onClick={resetToMain}
