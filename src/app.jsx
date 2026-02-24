@@ -69,6 +69,13 @@
         endDate: '',
         notes: ''
       });
+      const [wishListData, setWishListData] = useState({
+        itemName: '',
+        areaSupported: 'construction',
+        itemLink: '',
+        estimatedCost: '',
+        quantity: '1'
+      });
       const [lastConfirmation, setLastConfirmation] = useState(null);
       const [showCustomCheckInTime, setShowCustomCheckInTime] = useState(false);
       const [customCheckInTime, setCustomCheckInTime] = useState('');
@@ -269,7 +276,7 @@
           let url = '';
           if (entry.type === 'volunteer') {
             url = VOLUNTEER_SHEET_URL;
-          } else if (entry.type === 'guest' || entry.type === 'comment') {
+          } else if (entry.type === 'guest' || entry.type === 'comment' || entry.type === 'wish-list') {
             url = GUEST_FEEDBACK_SHEET_URL;
           } else if (entry.type === 'out-of-town') {
             url = OOT_NOTICE_SHEET_URL;
@@ -602,6 +609,44 @@
         }, 2000);
       };
 
+      const handleWishListSubmit = () => {
+        const itemName = wishListData.itemName.trim();
+        const itemLink = wishListData.itemLink.trim();
+        const estimatedCost = Number(wishListData.estimatedCost);
+        const quantity = Number(wishListData.quantity);
+
+        if (
+          !itemName ||
+          !itemLink ||
+          !Number.isFinite(estimatedCost) ||
+          estimatedCost <= 0 ||
+          !Number.isInteger(quantity) ||
+          quantity <= 0
+        ) {
+          return;
+        }
+
+        const entry = {
+          timestamp: new Date().toISOString(),
+          type: 'wish-list',
+          action: 'wishlist-item',
+          entry: {
+            itemName,
+            areaSupported: dutyLabels[wishListData.areaSupported] || dutyLabels.other,
+            itemLink,
+            estimatedCost: estimatedCost.toFixed(2),
+            quantity
+          }
+        };
+
+        addLog(entry);
+        setLastConfirmation({ type: 'wish-list', itemName });
+        setScreen('confirmation');
+        setTimeout(() => {
+          resetToMain();
+        }, 2000);
+      };
+
       const buildLocalIso = (dateStr, timeStr) => {
         const value = new Date(`${dateStr}T${timeStr}:00`);
         return Number.isNaN(value.getTime()) ? null : value.toISOString();
@@ -662,6 +707,13 @@
         setCustomName('');
         setGuestData({ name: '', guests: 1, email: '', joinList: false });
         setOutOfTownData({ name: '', startDate: '', endDate: '', notes: '' });
+        setWishListData({
+          itemName: '',
+          areaSupported: 'construction',
+          itemLink: '',
+          estimatedCost: '',
+          quantity: '1'
+        });
         setSelectedVolunteerForHours(null);
         setCommentText('');
         setLastConfirmation(null);
@@ -1564,7 +1616,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">Other Options</h2>
 
-              <div className="space-y-3 sm:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                 <button
                   onClick={() => setScreen('manual-hours')}
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
@@ -1578,12 +1630,6 @@ for (let i = 0; i < todayLogs.length; i++) {
                   View Volunteer Hours
                 </button>
                 <button
-                  onClick={() => setScreen('comment')}
-                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
-                >
-                  Anonymous Request / Comment
-                </button>
-                <button
                   onClick={() => setScreen('out-of-town')}
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
                 >
@@ -1594,6 +1640,18 @@ for (let i = 0; i < todayLogs.length; i++) {
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
                 >
                   Fillable Forms
+                </button>
+                <button
+                  onClick={() => setScreen('wish-list')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
+                >
+                  Add to Wish List
+                </button>
+                <button
+                  onClick={() => setScreen('comment')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
+                >
+                  Anonymous Request / Comment
                 </button>
                 <a
                   href="https://drive.google.com/drive/folders/1sQmw-Gw65-SSp786cZG9-zNFEsz8jb5e?dmr=1&ec=wgc-drive-globalnav-goto"
@@ -1695,6 +1753,112 @@ for (let i = 0; i < todayLogs.length; i++) {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        );
+      }
+
+      // Wish List Entry
+      if (screen === 'wish-list') {
+        const estimatedCost = Number(wishListData.estimatedCost);
+        const quantity = Number(wishListData.quantity);
+        const canSubmit =
+          wishListData.itemName.trim() &&
+          wishListData.itemLink.trim() &&
+          Number.isFinite(estimatedCost) &&
+          estimatedCost > 0 &&
+          Number.isInteger(quantity) &&
+          quantity > 0;
+
+        return (
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={() => setScreen('other')}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+
+              <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-2 sm:mb-4 text-center font-semibold px-2">
+                Add to Wish List
+              </h2>
+              <p className="text-base sm:text-lg text-stone-600 text-center mb-4 sm:mb-8 px-2">
+                Submit an item to feature in the newsletter and website wish list.
+              </p>
+
+              <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 space-y-5 sm:space-y-6">
+                <div>
+                  <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Item Name</label>
+                  <input
+                    type="text"
+                    value={wishListData.itemName}
+                    onChange={(e) => setWishListData({ ...wishListData, itemName: e.target.value })}
+                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                    placeholder="Enter item name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Area Supported</label>
+                  <select
+                    value={wishListData.areaSupported}
+                    onChange={(e) => setWishListData({ ...wishListData, areaSupported: e.target.value })}
+                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all bg-white"
+                  >
+                    {Object.keys(dutyLabels).map((key) => (
+                      <option key={key} value={key}>
+                        {dutyLabels[key]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Link</label>
+                  <input
+                    type="url"
+                    value={wishListData.itemLink}
+                    onChange={(e) => setWishListData({ ...wishListData, itemLink: e.target.value })}
+                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Estimated Cost ($)</label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={wishListData.estimatedCost}
+                      onChange={(e) => setWishListData({ ...wishListData, estimatedCost: e.target.value })}
+                      className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Quantity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={wishListData.quantity}
+                      onChange={(e) => setWishListData({ ...wishListData, quantity: e.target.value })}
+                      className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleWishListSubmit}
+                  disabled={!canSubmit}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  Submit Wish List Item
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -2298,6 +2462,8 @@ for (let i = 0; i < todayLogs.length; i++) {
                         ? `Task "${lastConfirmation?.taskName}" marked as done!`
                       : lastConfirmation?.type === 'manual-hours'
                         ? `Manual hours added for ${lastConfirmation?.name}.`
+                      : lastConfirmation?.type === 'wish-list'
+                        ? `Wish list item "${lastConfirmation?.itemName}" submitted.`
                       : 'Done.'}
                 </p>
               </div>
