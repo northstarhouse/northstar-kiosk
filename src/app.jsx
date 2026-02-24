@@ -829,7 +829,7 @@
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-full flex items-center justify-center">
                       <span className="text-purple-600"><ClipboardList size={16} /></span>
                     </div>
-                    <span>Open Tasks</span>
+                    <span>Available Side Jobs</span>
                   </button>
 
                   <button
