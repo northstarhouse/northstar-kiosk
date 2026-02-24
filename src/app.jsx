@@ -816,7 +816,7 @@
                 <div className="grid grid-cols-3 gap-2 md:gap-4">
                   <button
                     onClick={() => setScreen('open-tasks')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 py-6 md:py-10 rounded-2xl border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 aspect-square"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-3xl border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 min-h-[88px] md:min-h-[112px]"
                   >
                     <span className="text-purple-600"><ClipboardList size={16} /></span>
                     <span>Open Tasks</span>
@@ -824,7 +824,7 @@
 
                   <button
                     onClick={() => setScreen('calendar')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 py-6 md:py-10 rounded-2xl border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 aspect-square"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-3xl border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 min-h-[88px] md:min-h-[112px]"
                   >
                     <span className="text-sky-600"><CalendarIcon size={16} /></span>
                     <span>Calendar</span>
@@ -832,7 +832,7 @@
 
                   <button
                     onClick={() => setScreen('other')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-6 py-6 md:py-10 rounded-2xl border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 aspect-square"
+                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-3xl border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 min-h-[88px] md:min-h-[112px]"
                   >
                     <span className="text-amber-600"><Pen size={16} /></span>
                     <span>Other</span>
