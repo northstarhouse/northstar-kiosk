@@ -616,19 +616,8 @@
       const handleWishListSubmit = () => {
         const itemName = wishListData.itemName.trim();
         const itemLink = wishListData.itemLink.trim();
-        const estimatedCost = Number(wishListData.estimatedCost);
-        const quantity = Number(wishListData.quantity);
-
-        if (
-          !itemName ||
-          !itemLink ||
-          !Number.isFinite(estimatedCost) ||
-          estimatedCost <= 0 ||
-          !Number.isInteger(quantity) ||
-          quantity <= 0
-        ) {
-          return;
-        }
+        const estimatedCost = wishListData.estimatedCost.toString().trim();
+        const quantity = wishListData.quantity.toString().trim();
 
         const entry = {
           timestamp: new Date().toISOString(),
@@ -638,7 +627,7 @@
             itemName,
             areaSupported: dutyLabels[wishListData.areaSupported] || dutyLabels.other,
             itemLink,
-            estimatedCost: estimatedCost.toFixed(2),
+            estimatedCost,
             quantity
           }
         };
@@ -1781,16 +1770,6 @@ for (let i = 0; i < todayLogs.length; i++) {
 
       // Wish List Entry
       if (screen === 'wish-list') {
-        const estimatedCost = Number(wishListData.estimatedCost);
-        const quantity = Number(wishListData.quantity);
-        const canSubmit =
-          wishListData.itemName.trim() &&
-          wishListData.itemLink.trim() &&
-          Number.isFinite(estimatedCost) &&
-          estimatedCost > 0 &&
-          Number.isInteger(quantity) &&
-          quantity > 0;
-
         return (
           <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
             <div className="max-w-4xl mx-auto">
@@ -1874,10 +1853,16 @@ for (let i = 0; i < todayLogs.length; i++) {
 
                 <button
                   onClick={handleWishListSubmit}
-                  disabled={!canSubmit}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
                 >
                   Submit Wish List Item
+                </button>
+
+                <button
+                  onClick={() => setScreen('other')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-5 rounded-full text-base sm:text-lg font-semibold border-2 border-stone-300 shadow-sm hover:shadow-md transition-all"
+                >
+                  Back
                 </button>
               </div>
             </div>
