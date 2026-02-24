@@ -53,6 +53,15 @@
       const [selectedVolunteer, setSelectedVolunteer] = useState(null);
       const [actionSelectBackScreen, setActionSelectBackScreen] = useState('volunteer-select');
       const [customName, setCustomName] = useState('');
+      const [manualHoursData, setManualHoursData] = useState({
+        name: '',
+        duty: 'other',
+        date: '',
+        useSpecificTimes: false,
+        hours: '',
+        startTime: '',
+        endTime: ''
+      });
       const [guestData, setGuestData] = useState({ name: '', guests: 1, email: '', joinList: false });
       const [outOfTownData, setOutOfTownData] = useState({
         name: '',
@@ -593,6 +602,58 @@
         }, 2000);
       };
 
+      const buildLocalIso = (dateStr, timeStr) => {
+        const value = new Date(`${dateStr}T${timeStr}:00`);
+        return Number.isNaN(value.getTime()) ? null : value.toISOString();
+      };
+
+      const handleManualHoursSubmit = () => {
+        const name = manualHoursData.name.trim();
+        if (!name || !manualHoursData.date) return;
+
+        const duty = dutyLabels[manualHoursData.duty] || dutyLabels.other;
+        let checkInIso = null;
+        let checkOutIso = null;
+
+        if (manualHoursData.useSpecificTimes) {
+          if (!manualHoursData.startTime || !manualHoursData.endTime) return;
+          checkInIso = buildLocalIso(manualHoursData.date, manualHoursData.startTime);
+          checkOutIso = buildLocalIso(manualHoursData.date, manualHoursData.endTime);
+          if (!checkInIso || !checkOutIso) return;
+          if (new Date(checkOutIso) <= new Date(checkInIso)) return;
+        } else {
+          const enteredHours = Number(manualHoursData.hours);
+          if (!Number.isFinite(enteredHours) || enteredHours <= 0 || enteredHours > 12) return;
+
+          checkInIso = buildLocalIso(manualHoursData.date, '09:00');
+          if (!checkInIso) return;
+          checkOutIso = new Date(new Date(checkInIso).getTime() + enteredHours * 60 * 60 * 1000).toISOString();
+        }
+
+        addLog({
+          timestamp: checkInIso,
+          name,
+          type: 'volunteer',
+          duty,
+          action: 'check-in',
+          source: 'manual-hours'
+        });
+        addLog({
+          timestamp: checkOutIso,
+          name,
+          type: 'volunteer',
+          duty,
+          action: 'check-out',
+          source: 'manual-hours'
+        });
+
+        setLastConfirmation({ type: 'manual-hours', name });
+        setScreen('confirmation');
+        setTimeout(() => {
+          resetToMain();
+        }, 2000);
+      };
+
       const resetToMain = () => {
         setScreen('main');
         setSelectedDuty(null);
@@ -609,6 +670,15 @@
         setSelectedTask(null);
         setTaskSignupName('');
         setCheckoutPendingTasks([]);
+        setManualHoursData({
+          name: '',
+          duty: 'other',
+          date: '',
+          useSpecificTimes: false,
+          hours: '',
+          startTime: '',
+          endTime: ''
+        });
       };
 
       const calculateMonthlyHours = (volunteerName, sourceLogs = logs) => {
@@ -774,6 +844,11 @@
           names.forEach(name => {
             if (name !== 'Other') allNames.add(name);
           });
+        });
+        logs.forEach((log) => {
+          if (log?.type === 'volunteer' && typeof log.name === 'string' && log.name.trim()) {
+            allNames.add(log.name.trim());
+          }
         });
         return Array.from(allNames).sort();
       };
@@ -1503,6 +1578,12 @@ for (let i = 0; i < todayLogs.length; i++) {
                   View Volunteer Hours
                 </button>
                 <button
+                  onClick={() => setScreen('manual-hours')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
+                >
+                  Add Missed Hours
+                </button>
+                <button
                   onClick={() => setScreen('comment')}
                   className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all"
                 >
@@ -1620,6 +1701,152 @@ for (let i = 0; i < todayLogs.length; i++) {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        );
+      }
+
+      // Manual Hours Entry
+      if (screen === 'manual-hours') {
+        const canSubmitDateAndHours =
+          manualHoursData.name.trim() &&
+          manualHoursData.date &&
+          Number(manualHoursData.hours) > 0 &&
+          Number(manualHoursData.hours) <= 12;
+        const canSubmitDateAndTime =
+          manualHoursData.name.trim() &&
+          manualHoursData.date &&
+          manualHoursData.startTime &&
+          manualHoursData.endTime &&
+          manualHoursData.endTime > manualHoursData.startTime;
+        const canSubmit = manualHoursData.useSpecificTimes ? canSubmitDateAndTime : canSubmitDateAndHours;
+
+        return (
+          <div className="min-h-screen kiosk-screen bg-stone-50 px-3 sm:px-8 pt-6 sm:pt-4 pb-6 sm:pb-8">
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={() => setScreen('other')}
+                className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
+              >
+                <ArrowLeft className="mr-2" /> Back
+              </button>
+
+              <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-2 sm:mb-4 text-center font-semibold px-2">
+                Add Missed Volunteer Hours
+              </h2>
+              <p className="text-base sm:text-lg text-stone-600 text-center mb-4 sm:mb-8 px-2">
+                Add hours that were not entered at check-in/check-out time.
+              </p>
+
+              <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 space-y-5 sm:space-y-6">
+                <div>
+                  <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Volunteer Name</label>
+                  <input
+                    type="text"
+                    value={manualHoursData.name}
+                    onChange={(e) => setManualHoursData({ ...manualHoursData, name: e.target.value })}
+                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                    placeholder="Enter name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Area</label>
+                  <select
+                    value={manualHoursData.duty}
+                    onChange={(e) => setManualHoursData({ ...manualHoursData, duty: e.target.value })}
+                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all bg-white"
+                  >
+                    {Object.keys(dutyLabels).map((key) => (
+                      <option key={key} value={key}>
+                        {dutyLabels[key]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Date</label>
+                  <input
+                    type="date"
+                    value={manualHoursData.date}
+                    onChange={(e) => setManualHoursData({ ...manualHoursData, date: e.target.value })}
+                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Entry Type</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setManualHoursData({ ...manualHoursData, useSpecificTimes: false })}
+                      className={`w-full p-4 rounded-2xl border-2 text-base sm:text-lg font-semibold transition-all ${
+                        !manualHoursData.useSpecificTimes
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-100 active:bg-stone-200'
+                      }`}
+                    >
+                      Date + Hours
+                    </button>
+                    <button
+                      onClick={() => setManualHoursData({ ...manualHoursData, useSpecificTimes: true })}
+                      className={`w-full p-4 rounded-2xl border-2 text-base sm:text-lg font-semibold transition-all ${
+                        manualHoursData.useSpecificTimes
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-100 active:bg-stone-200'
+                      }`}
+                    >
+                      Date + Time
+                    </button>
+                  </div>
+                </div>
+
+                {manualHoursData.useSpecificTimes ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Start Time</label>
+                      <input
+                        type="time"
+                        value={manualHoursData.startTime}
+                        onChange={(e) => setManualHoursData({ ...manualHoursData, startTime: e.target.value })}
+                        className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">End Time</label>
+                      <input
+                        type="time"
+                        value={manualHoursData.endTime}
+                        onChange={(e) => setManualHoursData({ ...manualHoursData, endTime: e.target.value })}
+                        className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-base sm:text-lg font-semibold text-stone-700 mb-2">Total Hours</label>
+                    <input
+                      type="number"
+                      min="0.5"
+                      max="12"
+                      step="0.5"
+                      value={manualHoursData.hours}
+                      onChange={(e) => setManualHoursData({ ...manualHoursData, hours: e.target.value })}
+                      className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all"
+                      placeholder="Example: 3.5"
+                    />
+                    <p className="text-sm text-stone-500 mt-2">When using Date + Hours, check-in is set to 9:00 AM on that date.</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleManualHoursSubmit}
+                  disabled={!canSubmit}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  Add Hours
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -2067,6 +2294,8 @@ for (let i = 0; i < todayLogs.length; i++) {
                         ? `Task "${lastConfirmation?.taskName}" marked as in progress.`
                       : lastConfirmation?.type === 'task-done'
                         ? `Task "${lastConfirmation?.taskName}" marked as done!`
+                      : lastConfirmation?.type === 'manual-hours'
+                        ? `Manual hours added for ${lastConfirmation?.name}.`
                       : 'Done.'}
                 </p>
               </div>
