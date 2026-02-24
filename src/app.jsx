@@ -101,7 +101,6 @@
       const [tasksError, setTasksError] = useState('');
       const [selectedTask, setSelectedTask] = useState(null);
       const [taskSignupName, setTaskSignupName] = useState('');
-      const [taskSignupConfirmed, setTaskSignupConfirmed] = useState(false);
       const TASK_ASSIGNMENTS_STORAGE_KEY = 'task-assignments';
       const [taskAssignments, setTaskAssignments] = useState(() => {
         if (typeof window === 'undefined') return [];
@@ -550,7 +549,6 @@
         setCustomCheckInTime('');
         setSelectedTask(null);
         setTaskSignupName('');
-        setTaskSignupConfirmed(false);
         setCheckoutPendingTasks([]);
       };
 
@@ -1528,7 +1526,6 @@ for (let i = 0; i < todayLogs.length; i++) {
                         onClick={() => {
                           setSelectedTask(task);
                           setTaskSignupName(selectedVolunteer === 'other' ? customName : selectedVolunteer || '');
-                          setTaskSignupConfirmed(false);
                           setScreen('task-detail');
                         }}
                         className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-6 rounded-2xl border-2 border-stone-300 shadow-sm hover:shadow-md transition-all text-left"
@@ -1564,7 +1561,6 @@ for (let i = 0; i < todayLogs.length; i++) {
       // Task Detail Screen
       if (screen === 'task-detail' && selectedTask) {
         const onSiteVolunteers = getOnSiteVolunteers().map((v) => v.name);
-        const signedUpName = taskSignupName.trim();
 
         const handleTaskAction = (action) => {
           const volunteer = taskSignupName.trim();
@@ -1580,9 +1576,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 
           if (action === 'in-progress') {
             upsertTaskAssignment(selectedTask, volunteer, 'in-progress');
-            setLastConfirmation({ type: 'task-progress', taskName: selectedTask.taskName });
-            setScreen('confirmation');
-            setTimeout(() => resetToMain(), 2000);
+            resetToMain();
             return;
           }
 
@@ -1601,7 +1595,6 @@ for (let i = 0; i < todayLogs.length; i++) {
               <button
                 onClick={() => {
                   setSelectedTask(null);
-                  setTaskSignupConfirmed(false);
                   setScreen('open-tasks');
                 }}
                 className="mb-3 sm:mb-6 flex items-center text-stone-600 hover:text-stone-800 text-base sm:text-lg font-semibold transition-colors active:text-stone-900"
@@ -1629,69 +1622,44 @@ for (let i = 0; i < todayLogs.length; i++) {
                 </div>
               </div>
 
-              {!taskSignupConfirmed ? (
-                <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
-                  <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">Sign Up For This Task</h3>
-                  {onSiteVolunteers.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
-                      {onSiteVolunteers.map((name) => (
-                        <button
-                          key={name}
-                          onClick={() => setTaskSignupName(name)}
-                          className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
-                            taskSignupName === name
-                              ? 'bg-emerald-600 text-white border-emerald-600'
-                              : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
-                          }`}
-                        >
-                          {name}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="mb-4 text-sm sm:text-base text-stone-600 text-center">
-                      No volunteers are currently checked in.
-                    </div>
-                  )}
-                  <input
-                    type="text"
-                    value={taskSignupName}
-                    onChange={(e) => setTaskSignupName(e.target.value)}
-                    placeholder="Or type your name"
-                    className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all mb-4"
-                  />
-                  <button
-                    onClick={() => {
-                      if (!signedUpName) return;
-                      setTaskSignupName(signedUpName);
-                      setTaskSignupConfirmed(true);
-                    }}
-                    disabled={!signedUpName}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                    Continue
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
-                  <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-2 font-semibold">Task Status</h3>
-                  <p className="text-sm sm:text-base text-stone-600 mb-4">Signed up as: <span className="font-semibold">{signedUpName}</span></p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <button
-                      onClick={() => handleTaskAction('in-progress')}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                    >
-                      In Progress
-                    </button>
-                    <button
-                      onClick={() => handleTaskAction('done')}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                    >
-                      Completed
-                    </button>
+              <div className="bg-white rounded-2xl border-2 border-stone-300 shadow-sm p-5 sm:p-8 mb-4 sm:mb-6">
+                <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">Sign Up For This Task</h3>
+                {onSiteVolunteers.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
+                    {onSiteVolunteers.map((name) => (
+                      <button
+                        key={name}
+                        onClick={() => setTaskSignupName(name)}
+                        className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
+                          taskSignupName === name
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="mb-4 text-sm sm:text-base text-stone-600 text-center">
+                    No volunteers are currently checked in.
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={taskSignupName}
+                  onChange={(e) => setTaskSignupName(e.target.value)}
+                  placeholder="Or type your name"
+                  className="w-full p-4 text-lg border-2 border-stone-300 rounded-full focus:border-stone-500 focus:ring-2 focus:ring-stone-200 transition-all mb-4"
+                />
+                <button
+                  onClick={() => handleTaskAction('in-progress')}
+                  disabled={!taskSignupName.trim()}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 text-white p-5 sm:p-6 rounded-full text-lg sm:text-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  Sign Up
+                </button>
+              </div>
             </div>
           </div>
         );
