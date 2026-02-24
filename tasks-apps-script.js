@@ -20,8 +20,8 @@
  * The sheet tab name must match SHEET_NAME below.
  */
 
-var SHEET_NAME = 'Sheet1';
-var LOG_SHEET_NAME = 'Sheet2';
+var SHEET_NAME = 'Task List';
+var LOG_SHEET_NAME = 'Task Log';
 
 /* ── GET: read tasks ─────────────────────────────────────── */
 
