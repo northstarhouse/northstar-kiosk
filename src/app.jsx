@@ -2478,7 +2478,12 @@ for (let i = 0; i < todayLogs.length; i++) {
                 <ArrowLeft className="mr-2" /> Back
               </button>
               <div className="text-center">
-                <div className="text-6xl mb-4 star-gold">?</div>
+                <div className="flex justify-center mb-4">
+                  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+                    <circle cx="36" cy="36" r="36" fill="#dcfce7"/>
+                    <path d="M20 37l12 12 20-22" stroke="#16a34a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
                 <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Success!</h2>
                 <p className="text-xl text-stone-600 mt-4">
                   {lastConfirmation?.type === 'volunteer' && lastConfirmation?.action === 'check-in'
@@ -2541,7 +2546,12 @@ for (let i = 0; i < todayLogs.length; i++) {
                 <ArrowLeft className="mr-2" /> Back
               </button>
               <div className="text-center">
-                <div className="text-6xl mb-4 star-gold">?</div>
+                <div className="flex justify-center mb-4">
+                  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+                    <circle cx="36" cy="36" r="36" fill="#dcfce7"/>
+                    <path d="M20 37l12 12 20-22" stroke="#16a34a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
                 <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Successfully Checked Out!</h2>
                 <div className="mt-6 sm:mt-8 bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 sm:p-8 inline-block">
                   <p className="text-2xl text-stone-700 mb-2">Today's Hours</p>
