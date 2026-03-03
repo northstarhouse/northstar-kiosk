@@ -943,7 +943,17 @@ const { useState, useEffect } = React;
                   <span className="text-orange-700 text-sm md:text-xl font-bold">{onSite.length}</span>
                 </button>
 
-                <div className="grid grid-cols-3 gap-2 md:gap-4">
+                <button
+                  onClick={() => setScreen('calendar')}
+                  className="w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-8 rounded-3xl md:rounded-full border-2 border-stone-300 text-sm md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2 md:gap-4"
+                >
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-sky-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <CalendarIcon size={16} />
+                  </div>
+                  <span className="flex-1 text-left">Calendar</span>
+                </button>
+
+                <div className="grid grid-cols-2 gap-2 md:gap-4">
                   <button
                     onClick={() => setScreen('open-tasks')}
                     className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 h-[112px] md:h-[136px]"
@@ -952,16 +962,6 @@ const { useState, useEffect } = React;
                       <span className="text-purple-600"><ClipboardList size={16} /></span>
                     </div>
                     <span className="h-9 md:h-12 flex items-center justify-center text-center leading-tight">Available Side Jobs</span>
-                  </button>
-
-                  <button
-                    onClick={() => setScreen('calendar')}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 md:p-4 py-4 md:py-5 rounded-[2.25rem] border-2 border-stone-300 text-base md:text-2xl font-semibold shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-1 md:gap-2 h-[112px] md:h-[136px]"
-                  >
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-sky-100 rounded-full flex items-center justify-center">
-                      <span className="text-sky-600"><CalendarIcon size={16} /></span>
-                    </div>
-                    <span className="h-9 md:h-12 flex items-center justify-center text-center leading-tight">Calendar</span>
                   </button>
 
                   <button
