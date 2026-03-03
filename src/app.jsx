@@ -1679,6 +1679,14 @@ for (let i = 0; i < todayLogs.length; i++) {
                 >
                   Other Volunteer Resources
                 </a>
+                <a
+                  href="https://northstarhouse.github.io/nsh-events-committee/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-8 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-2xl font-semibold shadow-sm hover:shadow-md transition-all text-center"
+                >
+                  Events Committee
+                </a>
               </div>
             </div>
           </div>
