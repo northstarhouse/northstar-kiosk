@@ -175,7 +175,7 @@ const { useState, useEffect } = React;
         landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes', 'Debbie Stackhouse', 'Bob Aha', 'Robert Aha', 'Rob Shulman'],
         docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
         interiors: ['Bec Freeman', 'Lois Hensel', 'Lisa Robinson'],
-        events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco'],
+        events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco', 'Nancy Sanders'],
         volunteerExchange: ['Vince LoFranco', 'Diana Cushway', 'Other']
       };
 
