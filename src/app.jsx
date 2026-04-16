@@ -2027,19 +2027,23 @@ for (let i = 0; i < todayLogs.length; i++) {
                 <h3 className="text-xl sm:text-2xl font-serif text-stone-800 mb-4 font-semibold">Sign Up For This Task</h3>
                 {onSiteVolunteers.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
-                    {onSiteVolunteers.map((name) => (
-                      <button
-                        key={name}
-                        onClick={() => setTaskSignupName(name)}
-                        className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all ${
-                          taskSignupName === name
-                            ? 'bg-emerald-600 text-white border-emerald-600'
-                            : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
-                        }`}
-                      >
-                        {name}
-                      </button>
-                    ))}
+                    {onSiteVolunteers.map((name) => {
+                      const { isCheckedIn } = getShiftStatus(name);
+                      return (
+                        <button
+                          key={name}
+                          onClick={() => setTaskSignupName(name)}
+                          className={`p-3 sm:p-4 rounded-2xl sm:rounded-full border-2 text-sm sm:text-base font-semibold transition-all flex items-center justify-center gap-1 ${
+                            taskSignupName === name
+                              ? 'bg-emerald-600 text-white border-emerald-600'
+                              : 'bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 border-stone-300'
+                          }`}
+                        >
+                          {isCheckedIn && <span style={{ color: '#FFD700' }}>★</span>}
+                          {name}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="mb-4 text-sm sm:text-base text-stone-600 text-center">
@@ -2285,18 +2289,22 @@ for (let i = 0; i < todayLogs.length; i++) {
               <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">Select Volunteer</h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {allVolunteers.map(name => (
-                  <button
-                    key={name}
-                    onClick={() => {
-                      setSelectedVolunteerForHours(name);
-                      setScreen('hours-view');
-                    }}
-                    className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-5 sm:p-6 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all"
-                  >
-                    {name}
-                  </button>
-                ))}
+                {allVolunteers.map(name => {
+                  const { isCheckedIn } = getShiftStatus(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => {
+                        setSelectedVolunteerForHours(name);
+                        setScreen('hours-view');
+                      }}
+                      className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-5 sm:p-6 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                      {isCheckedIn && <span style={{ color: '#FFD700' }}>★</span>}
+                      {name}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

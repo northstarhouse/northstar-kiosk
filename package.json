@@ -4,7 +4,7 @@
   "description": "## Volunteer Hours (Google Sheets)",
   "main": "index.js",
   "scripts": {
-    "build": "esbuild src/app.jsx --outfile=assets/app.js --minify --format=iife --jsx-factory=React.createElement --jsx-fragment=React.Fragment --target=es2017"
+    "build": "esbuild src/app.jsx --outfile=assets/app.js --minify --format=iife --jsx-factory=React.createElement --jsx-fragment=React.Fragment --target=es2015"
   },
   "repository": {
     "type": "git",
