@@ -268,24 +268,34 @@ function cellToIso_(v) {
 }
 
 function appendVolunteerLog(entry) {
-  var sheet = getVolunteerLogsSheet();
-  var ts     = (entry.timestamp || new Date().toISOString()).toString();
-  var name   = (entry.name   || '').toString();
-  var action = (entry.action || '').toString();
+  var sheet   = getVolunteerLogsSheet();
+  var ts      = (entry.timestamp || new Date().toISOString()).toString();
+  var tsDate  = new Date(ts);          // parse to Date so Sheets stores it as a date cell
+  var tsMs    = tsDate.getTime();
+  var name    = (entry.name   || '').toString();
+  var action  = (entry.action || '').toString();
 
-  // Deduplicate: reject if an identical timestamp+name+action row already exists.
-  // Use cellToIso_ because Sheets may return Date objects instead of strings.
+  // Deduplicate: compare by epoch ms so the check works regardless of whether
+  // an existing row is stored as a Date object or a text string.
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
-    if (cellToIso_(data[i][0]) === ts &&
+    var cell = data[i][0];
+    var cellMs = (cell instanceof Date) ? cell.getTime() : new Date(cell.toString()).getTime();
+    if (!isNaN(cellMs) && cellMs === tsMs &&
         (data[i][1] || '').toString() === name &&
         (data[i][4] || '').toString() === action) {
       return { saved: true, duplicate: true };
     }
   }
 
+  // Store the timestamp in the same "M/d/yyyy H:mm:ss" format as existing rows
+  // so the column stays visually consistent.  Sheets will parse this back as a
+  // Date object when read with getValues().
+  var tz = Session.getScriptTimeZone();
+  var formattedTs = isNaN(tsMs) ? ts : Utilities.formatDate(tsDate, tz, 'M/d/yyyy H:mm:ss');
+
   sheet.appendRow([
-    ts,
+    formattedTs,
     name,
     (entry.type   || 'volunteer').toString(),
     (entry.duty   || '').toString(),
