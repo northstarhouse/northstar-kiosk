@@ -259,18 +259,27 @@ function getVolunteerLogsSheet() {
   return sheet;
 }
 
+// Google Sheets auto-converts ISO strings to Date objects.
+// Always normalise cell values back to ISO strings when reading timestamps.
+function cellToIso_(v) {
+  if (!v) return '';
+  if (v instanceof Date) return v.toISOString();
+  return v.toString();
+}
+
 function appendVolunteerLog(entry) {
   var sheet = getVolunteerLogsSheet();
   var ts     = (entry.timestamp || new Date().toISOString()).toString();
   var name   = (entry.name   || '').toString();
   var action = (entry.action || '').toString();
 
-  // Deduplicate: reject if an identical timestamp+name+action row already exists
+  // Deduplicate: reject if an identical timestamp+name+action row already exists.
+  // Use cellToIso_ because Sheets may return Date objects instead of strings.
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
-    if (data[i][0].toString() === ts &&
-        data[i][1].toString() === name &&
-        data[i][4].toString() === action) {
+    if (cellToIso_(data[i][0]) === ts &&
+        (data[i][1] || '').toString() === name &&
+        (data[i][4] || '').toString() === action) {
       return { saved: true, duplicate: true };
     }
   }
@@ -295,7 +304,7 @@ function readVolunteerLogs() {
     var row = data[i];
     if (!row[0]) continue;
     rows.push({
-      timestamp: row[0].toString(),
+      timestamp: cellToIso_(row[0]),
       name:      (row[1] || '').toString(),
       type:      (row[2] || 'volunteer').toString(),
       duty:      (row[3] || '').toString(),
