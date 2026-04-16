@@ -1,4 +1,4 @@
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
     // Icon components
     const ArrowLeft = () => (
@@ -48,6 +48,7 @@ const { useState, useEffect } = React;
     );
 
     const NorthStarKiosk = () => {
+      const pendingWriteKey = useRef(null);
       const [screen, setScreen] = useState('main');
       const [selectedDuty, setSelectedDuty] = useState(null);
       const [selectedVolunteer, setSelectedVolunteer] = useState(null);
@@ -415,6 +416,12 @@ const { useState, useEffect } = React;
       }, [screen, lastTasksSyncAt]);
 
       const addLog = (entry) => {
+        // Guard against double-taps: ignore if an identical write is already in-flight
+        const key = `${entry.timestamp}|${entry.name}|${entry.action}`;
+        if (pendingWriteKey.current === key) return;
+        pendingWriteKey.current = key;
+        setTimeout(() => { pendingWriteKey.current = null; }, 5000);
+
         // Optimistic update so UI reflects the action immediately
         setLogs(prev => [...prev, entry]);
         sendToGoogleSheet(entry);

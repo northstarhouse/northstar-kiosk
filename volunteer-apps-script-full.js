@@ -1,0 +1,1031 @@
+/**
+ * Google Apps Script for North Star Strategic Plan Tracker
+ *
+ * SETUP INSTRUCTIONS:
+ * 1. Create a new Google Sheet (or use an existing one)
+ * 2. Go to Extensions > Apps Script
+ * 3. Delete any existing code and paste this entire file
+ * 4. Click "Deploy" > "New deployment"
+ * 5. Select type: "Web app"
+ * 6. Set "Execute as": "Me"
+ * 7. Set "Who has access": "Anyone"
+ * 8. Click "Deploy"
+ * 9. Copy the Web App URL
+ * 10. Paste the URL into GOOGLE_SCRIPT_URL in src/app.jsx
+ *
+ * OPTIONAL:
+ * - If you want to target a specific spreadsheet (not the bound sheet),
+ *   set SHEET_ID below to the Google Sheet ID.
+ *
+ * SHEET STRUCTURE:
+ * The script will automatically create the header row on first use.
+ * Columns: id, title, focusArea, description, owner, coChampions, status,
+ *          progress, targetDate, successMetrics, threeYearVision, annualGoals,
+ *          notes, lastUpdateAt, updates, createdAt, updatedAt
+ */
+
+const USE_SHEETS = true;
+const SHEET_ID = '1jUZzVT5hJ238EhnZt-9N7iLJ7qeJOKKPVczCu_nypPQ';
+const SHEET_NAME = 'Strategic Plan';
+const IMAGE_FOLDER_ID = '';
+const IMAGE_FOLDER_NAME = 'North Star Strategic Plan Files';
+
+const DONATIONS_SHEET_ID = '1eGD3TP--yJBv5ISwGFKV3JOmJHCISzZk2jcF7Fuj98s';
+const DONATIONS_SHEET_NAME = '2026 Donations';
+const SPONSORS_SHEET_ID = '1eGD3TP--yJBv5ISwGFKV3JOmJHCISzZk2jcF7Fuj98s';
+const SPONSORS_SHEET_NAME = '2026 Sponsors';
+const VOLUNTEERS_SHEET_ID = '1R-rBXFEnqcWXJCAbvpJwXooe-G231tanGYN4GDBv9ZA';
+const VOLUNTEERS_SHEET_NAME = '2026 Volunteers';
+const EVENTS_SHEET_ID = '1kv2-3cMhzViMr1Fs-SGmiY3DJe05p3r7VIVk5LOj-_k';
+
+const SECTIONS_SHEET_ID = '1jUZzVT5hJ238EhnZt-9N7iLJ7qeJOKKPVczCu_nypPQ';
+const SECTION_TABS = [
+  'Construction',
+  'Grounds',
+  'Interiors',
+  'Docents',
+  'Fundraising',
+  'Events',
+  'Marketing',
+  'Venue'
+];
+const FOCUS_AREAS = [
+  'Fund Development',
+  'House and Grounds Development',
+  'Programs and Events',
+  'Organizational Development'
+];
+const VISION_SHEET_NAME = 'Three-Year Vision';
+const VISION_HEADERS = [
+  'focusArea',
+  'threeYearVision',
+  'updatedAt'
+];
+const PURCHASES_SHEET_NAME = 'Purchases';
+const PURCHASES_HEADERS = [
+  'id',
+  'section',
+  'item',
+  'amountSpent',
+  'type',
+  'notes',
+  'createdAt',
+  'updatedAt'
+];
+
+const FOCUS_GOALS_SHEET_NAME = 'Focus Areas';
+const FOCUS_GOALS_HEADERS = [
+  'id',
+  'focusArea',
+  'goalTopic',
+  'annualGoals',
+  'annualGoalsItems',
+  'goalDetails',
+  'goalLead',
+  'futureGoals',
+  'startDate',
+  'dueDate',
+  'goalChampions',
+  'goalTeamMembers',
+  'progress',
+  'category',
+  'updatedAt'
+];
+
+const QUARTER_ROW_MAP = {
+  Q1: 2,
+  Q2: 3,
+  Q3: 4,
+  Q4: 5
+};
+const REVIEW_ROW_MAP = {
+  Q1: 7,
+  Q2: 8,
+  Q3: 9,
+  Q4: 10
+};
+const REVIEW_HEADER_ROW = 6;
+const FINAL_TALLY_ROW = 12;
+const SNAPSHOT_START_ROW = 14;
+const SNAPSHOT_LABEL_COL = 1;
+const SNAPSHOT_VALUE_COL = 2;
+const SNAPSHOT_LABELS = ['Area', 'Lead', 'Budget', 'Volunteers'];
+const QUARTERLY_HEADERS = [
+  'Organizational',
+  'Quarter / Year',
+  'Date Submitted',
+  'Primary Focus',
+  'Goal 1',
+  'Goal 1 Status',
+  'Goal 1 Summary',
+  'Goal 2',
+  'Goal 2 Status',
+  'Goal 2 Summary',
+  'Goal 3',
+  'Goal 3 Status',
+  'Goal 3 Summary',
+  'What Went Well',
+  'Challenges (checked)',
+  'Challenges Details',
+  'Support Needed',
+  'Areas That Could Assist',
+  'Support Types (checked)',
+  'Other Areas We Can Help',
+  'Next Priority 1',
+  'Next Priority 2',
+  'Next Priority 3',
+  'Decisions Needed',
+  'Strategic Alignment',
+  'Uploaded Files',
+  'Next Quarter Focus'
+];
+const REVIEW_HEADERS = [
+  'Status After Review',
+  'Actions Assigned',
+  'Cross-Area Impacts',
+  'Area(s) impacted',
+  'Coordination needed',
+  'Priority Confirmation (Next Quarter)',
+  'Escalation Flag',
+  'Review completed on',
+  'Next check-in date'
+];
+const FINAL_TALLY_LABEL = 'Final Tally Overview';
+const LEGACY_QUARTERLY_LABELS = [
+  'Quarter / Year',
+  'Date Submitted',
+  'Primary Focus',
+  'Goal 1',
+  'Goal 1 Status',
+  'Goal 1 Summary',
+  'Goal 2',
+  'Goal 2 Status',
+  'Goal 2 Summary',
+  'Goal 3',
+  'Goal 3 Status',
+  'Goal 3 Summary',
+  'What Went Well',
+  'Challenges (checked)',
+  'Challenges Details',
+  'Support Needed',
+  'Areas That Could Assist',
+  'Support Types (checked)',
+  'Other Areas We Can Help',
+  'Next Priority 1',
+  'Next Priority 2',
+  'Next Priority 3',
+  'Decisions Needed',
+  'Strategic Alignment',
+  'Uploaded Files'
+];
+const LEGACY_REVIEW_LABELS = [
+  'Status After Review',
+  'Actions Assigned',
+  'Cross-Area Impacts',
+  'Area(s) impacted',
+  'Coordination needed',
+  'Priority Confirmation (Next Quarter)',
+  'Escalation Flag',
+  'Review completed on',
+  'Next check-in date'
+];
+
+// Column headers matching the object schema
+const HEADERS = [
+  'id',
+  'title',
+  'focusArea',
+  'description',
+  'owner',
+  'coChampions',
+  'status',
+  'progress',
+  'targetDate',
+  'successMetrics',
+  'threeYearVision',
+  'annualGoals',
+  'notes',
+  'lastUpdateAt',
+  'updates',
+  'createdAt',
+  'updatedAt'
+];
+
+// ─────────────────────────────────────────────
+// HOURS
+// ─────────────────────────────────────────────
+
+const HOURS_SHEET_ID = '1sp4c5HRzVs3js3MURSedX82e6Hc6mAenjY-Szliaeno';
+const HOURS_SHEET_NAME = 'Hours Summary';
+const VOLUNTEER_LOGS_SHEET_NAME = 'VolunteerLogs';
+
+function getStrategicSpreadsheet() {
+  return SHEET_ID
+    ? SpreadsheetApp.openById(SHEET_ID)
+    : SpreadsheetApp.getActiveSpreadsheet();
+}
+
+function getSheet() {
+  const ss = getStrategicSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    const sheets = ss.getSheets();
+    if (sheets.length > 0) {
+      sheet = sheets[0];
+      sheet.setName(SHEET_NAME);
+    } else {
+      sheet = ss.insertSheet(SHEET_NAME);
+      sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+      sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
+      sheet.setFrozenRows(1);
+    }
+  }
+  return sheet;
+}
+
+// ─────────────────────────────────────────────
+// VOLUNTEER LOG (kiosk check-in / check-out)
+// ─────────────────────────────────────────────
+
+function getVolunteerLogsSheet() {
+  var ss = SpreadsheetApp.openById(HOURS_SHEET_ID);
+  var sheet = ss.getSheetByName(VOLUNTEER_LOGS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(VOLUNTEER_LOGS_SHEET_NAME);
+    sheet.appendRow(['timestamp', 'name', 'type', 'duty', 'action', 'source']);
+    sheet.getRange(1, 1, 1, 6).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function appendVolunteerLog(entry) {
+  var sheet = getVolunteerLogsSheet();
+  var ts     = (entry.timestamp || new Date().toISOString()).toString();
+  var name   = (entry.name   || '').toString();
+  var action = (entry.action || '').toString();
+
+  // Deduplicate: reject if an identical timestamp+name+action row already exists
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0].toString() === ts &&
+        data[i][1].toString() === name &&
+        data[i][4].toString() === action) {
+      return { saved: true, duplicate: true };
+    }
+  }
+
+  sheet.appendRow([
+    ts,
+    name,
+    (entry.type   || 'volunteer').toString(),
+    (entry.duty   || '').toString(),
+    action,
+    (entry.source || '').toString()
+  ]);
+  return { saved: true };
+}
+
+function readVolunteerLogs() {
+  var sheet = getVolunteerLogsSheet();
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (!row[0]) continue;
+    rows.push({
+      timestamp: row[0].toString(),
+      name:      (row[1] || '').toString(),
+      type:      (row[2] || 'volunteer').toString(),
+      duty:      (row[3] || '').toString(),
+      action:    (row[4] || '').toString()
+    });
+  }
+  return rows;
+}
+
+function buildVolunteerSessions() {
+  var logs = readVolunteerLogs();
+  var byName = {};
+  logs.forEach(function(log) {
+    if (log.type !== 'volunteer') return;
+    var name = (log.name || '').trim();
+    if (!name) return;
+    if (!byName[name]) byName[name] = [];
+    byName[name].push(log);
+  });
+  var sessions = [];
+  Object.keys(byName).forEach(function(name) {
+    var entries = byName[name].slice().sort(function(a, b) {
+      return new Date(a.timestamp) - new Date(b.timestamp);
+    });
+    var pendingCheckIn = null;
+    entries.forEach(function(log) {
+      if (log.action === 'check-in') {
+        pendingCheckIn = log;
+      } else if (log.action === 'check-out' && pendingCheckIn) {
+        var loginAt  = new Date(pendingCheckIn.timestamp);
+        var logoutAt = new Date(log.timestamp);
+        sessions.push({
+          user:            name,
+          loginAt:         pendingCheckIn.timestamp,
+          logoutAt:        log.timestamp,
+          durationMinutes: Math.round((logoutAt - loginAt) / 60000),
+          duty:            pendingCheckIn.duty || ''
+        });
+        pendingCheckIn = null;
+      }
+    });
+  });
+  return sessions;
+}
+
+function ensureSectionTabs() {
+  const ss = SECTIONS_SHEET_ID
+    ? SpreadsheetApp.openById(SECTIONS_SHEET_ID)
+    : SpreadsheetApp.getActiveSpreadsheet();
+  SECTION_TABS.forEach((tabName) => {
+    let sheet = ss.getSheetByName(tabName);
+    if (!sheet) sheet = ss.insertSheet(tabName);
+    const headerRange = sheet.getRange(1, 1, 1, QUARTERLY_HEADERS.length);
+    const headerValues = headerRange.getValues()[0];
+    if (headerValues.every((value) => value === '')) {
+      headerRange.setValues([QUARTERLY_HEADERS]);
+      headerRange.setFontWeight('bold');
+      sheet.setFrozenRows(1);
+    }
+    const reviewHeaderRange = sheet.getRange(REVIEW_HEADER_ROW, 1, 1, REVIEW_HEADERS.length);
+    const reviewHeaderValues = reviewHeaderRange.getValues()[0];
+    if (reviewHeaderValues.every((value) => value === '')) {
+      reviewHeaderRange.setValues([REVIEW_HEADERS]);
+      reviewHeaderRange.setFontWeight('bold');
+    }
+    const finalLabelCell = sheet.getRange(FINAL_TALLY_ROW, 1);
+    if (!finalLabelCell.getValue()) {
+      finalLabelCell.setValue(FINAL_TALLY_LABEL);
+      finalLabelCell.setFontWeight('bold');
+    }
+    ensureSectionSnapshotBlock(sheet, tabName);
+  });
+}
+
+function getVisionSheet() {
+  const ss = getStrategicSpreadsheet();
+  let sheet = ss.getSheetByName(VISION_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(VISION_SHEET_NAME);
+  const headerRange = sheet.getRange(1, 1, 1, VISION_HEADERS.length);
+  if (headerRange.getValues()[0].every((value) => value === '')) {
+    headerRange.setValues([VISION_HEADERS]);
+    headerRange.setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function ensureVisionRows() {
+  const sheet = getVisionSheet();
+  const lastRow = sheet.getLastRow();
+  const existing = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
+  FOCUS_AREAS.forEach((area) => {
+    if (!existing.includes(area)) sheet.appendRow([area, '', '']);
+  });
+}
+
+function getFocusGoalsSheet() {
+  const ss = getStrategicSpreadsheet();
+  let sheet = ss.getSheetByName(FOCUS_GOALS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(FOCUS_GOALS_SHEET_NAME);
+  const headerRange = sheet.getRange(1, 1, 1, FOCUS_GOALS_HEADERS.length);
+  const headerValues = headerRange.getValues()[0];
+  const needsHeaders = headerValues.every((value) => value === '');
+  if (needsHeaders) {
+    headerRange.setValues([FOCUS_GOALS_HEADERS]);
+    headerRange.setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  } else {
+    const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const annualGoalsIndex = existingHeaders.indexOf('annualGoals');
+    const annualItemsIndex = existingHeaders.indexOf('annualGoalsItems');
+    if (annualGoalsIndex >= 0 && annualItemsIndex === -1) {
+      const insertIndex = annualGoalsIndex + 2;
+      sheet.insertColumnBefore(insertIndex);
+      sheet.getRange(1, insertIndex).setValue('annualGoalsItems');
+    }
+    let currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    if (currentHeaders.indexOf('goalDetails') === -1) {
+      const insertIndex = currentHeaders.indexOf('annualGoalsItems') >= 0
+        ? currentHeaders.indexOf('annualGoalsItems') + 2
+        : (currentHeaders.indexOf('annualGoals') >= 0 ? currentHeaders.indexOf('annualGoals') + 2 : currentHeaders.length + 1);
+      sheet.insertColumnBefore(insertIndex);
+      sheet.getRange(1, insertIndex).setValue('goalDetails');
+    }
+    currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    if (currentHeaders.indexOf('goalLead') === -1) {
+      const insertIndex = currentHeaders.indexOf('goalDetails') >= 0
+        ? currentHeaders.indexOf('goalDetails') + 2
+        : (currentHeaders.indexOf('annualGoalsItems') >= 0 ? currentHeaders.indexOf('annualGoalsItems') + 2 : currentHeaders.length + 1);
+      sheet.insertColumnBefore(insertIndex);
+      sheet.getRange(1, insertIndex).setValue('goalLead');
+    }
+    currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    if (currentHeaders.indexOf('futureGoals') === -1) {
+      const insertIndex = currentHeaders.indexOf('goalLead') >= 0
+        ? currentHeaders.indexOf('goalLead') + 2
+        : (currentHeaders.indexOf('goalDetails') >= 0 ? currentHeaders.indexOf('goalDetails') + 2 : currentHeaders.length + 1);
+      sheet.insertColumnBefore(insertIndex);
+      sheet.getRange(1, insertIndex).setValue('futureGoals');
+    }
+  }
+  return sheet;
+}
+
+function getPurchasesSheet() {
+  const ss = getStrategicSpreadsheet();
+  let sheet = ss.getSheetByName(PURCHASES_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(PURCHASES_SHEET_NAME);
+  const headerRange = sheet.getRange(1, 1, 1, PURCHASES_HEADERS.length);
+  if (headerRange.getValues()[0].every((value) => value === '')) {
+    headerRange.setValues([PURCHASES_HEADERS]);
+    headerRange.setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getPurchases(section) {
+  const sheet = getPurchasesSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  const headers = data[0];
+  const headerMap = headers.reduce((acc, value, idx) => { if (value) acc[value] = idx; return acc; }, {});
+  const rows = data.slice(1).filter((row) => row[headerMap.id]);
+  const filtered = section ? rows.filter((row) => row[headerMap.section] === section) : rows;
+  return filtered.map((row) => ({
+    id: row[headerMap.id],
+    section: row[headerMap.section] || '',
+    item: row[headerMap.item] || '',
+    amountSpent: row[headerMap.amountSpent] || 0,
+    type: row[headerMap.type] || 'budget',
+    notes: row[headerMap.notes] || '',
+    createdAt: row[headerMap.createdAt] || '',
+    updatedAt: row[headerMap.updatedAt] || ''
+  }));
+}
+
+function savePurchase(purchase) {
+  if (!purchase) throw new Error('Missing purchase data');
+  const sheet = getPurchasesSheet();
+  const lastRow = sheet.getLastRow();
+  const ids = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
+  const id = purchase.id || Utilities.getUuid();
+  const rowIndex = ids.indexOf(id);
+  const targetRow = rowIndex >= 0 ? rowIndex + 2 : lastRow + 1;
+  const now = new Date().toISOString();
+  const createdAt = rowIndex >= 0 ? (purchase.createdAt || now) : now;
+  const values = [id, purchase.section || '', purchase.item || '', purchase.amountSpent || 0, purchase.type || 'budget', purchase.notes || '', createdAt, now];
+  sheet.getRange(targetRow, 1, 1, PURCHASES_HEADERS.length).setValues([values]);
+  return { id, section: purchase.section || '', item: purchase.item || '', amountSpent: purchase.amountSpent || 0, type: purchase.type || 'budget', notes: purchase.notes || '', createdAt, updatedAt: now };
+}
+
+function deletePurchase(id) {
+  if (!id) throw new Error('Missing id');
+  const sheet = getPurchasesSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { deleted: false };
+  const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
+  const rowIndex = ids.indexOf(id);
+  if (rowIndex < 0) return { deleted: false };
+  sheet.deleteRow(rowIndex + 2);
+  return { deleted: true };
+}
+
+function getFocusAreaGoals() {
+  const sheet = getFocusGoalsSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  const headers = data[0];
+  const headerMap = headers.reduce((acc, value, idx) => { if (value) acc[value] = idx; return acc; }, {});
+  return data.slice(1).filter((row) => row[headerMap.id]).map((row) => ({
+    id: row[headerMap.id],
+    focusArea: row[headerMap.focusArea] || '',
+    goalTopic: row[headerMap.goalTopic] || '',
+    annualGoals: row[headerMap.annualGoals] || '',
+    annualGoalsItems: (() => { const raw = row[headerMap.annualGoalsItems]; if (!raw) return []; try { return JSON.parse(raw); } catch (e) { return []; } })(),
+    goalDetails: row[headerMap.goalDetails] || '',
+    goalLead: row[headerMap.goalLead] || '',
+    futureGoals: row[headerMap.futureGoals] || '',
+    startDate: row[headerMap.startDate] || '',
+    dueDate: row[headerMap.dueDate] || '',
+    goalChampions: row[headerMap.goalChampions] || '',
+    goalTeamMembers: row[headerMap.goalTeamMembers] || '',
+    progress: row[headerMap.progress] || '',
+    category: row[headerMap.category] || '',
+    updatedAt: row[headerMap.updatedAt] || ''
+  }));
+}
+
+function updateFocusAreaGoal(goal) {
+  if (!goal) throw new Error('Missing goal data');
+  const sheet = getFocusGoalsSheet();
+  const lastRow = sheet.getLastRow();
+  const ids = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
+  const id = goal.id || Utilities.getUuid();
+  const rowIndex = ids.indexOf(id);
+  const targetRow = rowIndex >= 0 ? rowIndex + 2 : lastRow + 1;
+  const timestamp = new Date().toISOString();
+  const values = [id, goal.focusArea || '', goal.goalTopic || '', goal.annualGoals || '', JSON.stringify(goal.annualGoalsItems || []), goal.goalDetails || '', goal.goalLead || '', goal.futureGoals || '', goal.startDate || '', goal.dueDate || '', goal.goalChampions || '', goal.goalTeamMembers || '', goal.progress || '', goal.category || '', timestamp];
+  sheet.getRange(targetRow, 1, 1, FOCUS_GOALS_HEADERS.length).setValues([values]);
+  return { id, focusArea: goal.focusArea || '', goalTopic: goal.goalTopic || '', annualGoals: goal.annualGoals || '', annualGoalsItems: goal.annualGoalsItems || [], goalDetails: goal.goalDetails || '', goalLead: goal.goalLead || '', futureGoals: goal.futureGoals || '', startDate: goal.startDate || '', dueDate: goal.dueDate || '', goalChampions: goal.goalChampions || '', goalTeamMembers: goal.goalTeamMembers || '', progress: goal.progress || '', category: goal.category || '', updatedAt: timestamp };
+}
+
+function deleteFocusAreaGoal(id) {
+  if (!id) throw new Error('Missing id');
+  const sheet = getFocusGoalsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { deleted: false };
+  const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
+  const rowIndex = ids.indexOf(id);
+  if (rowIndex < 0) return { deleted: false };
+  sheet.deleteRow(rowIndex + 2);
+  return { deleted: true };
+}
+
+function getImageFolder() {
+  if (IMAGE_FOLDER_ID) return DriveApp.getFolderById(IMAGE_FOLDER_ID);
+  const folders = DriveApp.getFoldersByName(IMAGE_FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(IMAGE_FOLDER_NAME);
+}
+
+function getQuarterlySheet(tabName) {
+  const ss = SECTIONS_SHEET_ID ? SpreadsheetApp.openById(SECTIONS_SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(tabName);
+  if (!sheet) sheet = ss.insertSheet(tabName);
+  const headerRange = sheet.getRange(1, 1, 1, QUARTERLY_HEADERS.length);
+  if (headerRange.getValues()[0].every((value) => value === '')) {
+    headerRange.setValues([QUARTERLY_HEADERS]);
+    headerRange.setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  const reviewHeaderRange = sheet.getRange(REVIEW_HEADER_ROW, 1, 1, REVIEW_HEADERS.length);
+  if (reviewHeaderRange.getValues()[0].every((value) => value === '')) {
+    reviewHeaderRange.setValues([REVIEW_HEADERS]);
+    reviewHeaderRange.setFontWeight('bold');
+  }
+  const finalLabelCell = sheet.getRange(FINAL_TALLY_ROW, 1);
+  if (!finalLabelCell.getValue()) {
+    finalLabelCell.setValue(FINAL_TALLY_LABEL);
+    finalLabelCell.setFontWeight('bold');
+  }
+  ensureSectionSnapshotBlock(sheet, tabName);
+  return sheet;
+}
+
+function ensureSectionSnapshotBlock(sheet, tabName) {
+  const labelRange = sheet.getRange(SNAPSHOT_START_ROW, SNAPSHOT_LABEL_COL, SNAPSHOT_LABELS.length, 1);
+  const labelValues = labelRange.getValues();
+  let labelDirty = false;
+  labelValues.forEach((row, idx) => { if (!row[0]) { labelValues[idx][0] = SNAPSHOT_LABELS[idx]; labelDirty = true; } });
+  if (labelDirty) { labelRange.setValues(labelValues); labelRange.setFontWeight('bold'); }
+  const areaCell = sheet.getRange(SNAPSHOT_START_ROW, SNAPSHOT_VALUE_COL);
+  if (!areaCell.getValue()) areaCell.setValue(tabName);
+}
+
+function readSnapshotValues(sheet) {
+  const blockValues = sheet.getRange(SNAPSHOT_START_ROW, SNAPSHOT_VALUE_COL, SNAPSHOT_LABELS.length, 1).getValues().flat();
+  if (blockValues.slice(1).some((v) => v !== '' && v !== null && v !== undefined)) return blockValues;
+  const legacyValues = sheet.getRange('A3:A5').getValues().flat();
+  if (legacyValues.some((v) => v !== '' && v !== null && v !== undefined)) return ['', legacyValues[0], legacyValues[1], legacyValues[2]];
+  return ['', '', '', ''];
+}
+
+function getSheetById(sheetId, sheetName) {
+  const ss = SpreadsheetApp.openById(sheetId);
+  if (!sheetName) return ss.getSheets()[0];
+  return ss.getSheetByName(sheetName) || ss.getSheets()[0];
+}
+
+function getColumnAValues(sheet) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
+}
+
+function getColumnValues(sheet, columnIndex) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, columnIndex, lastRow - 1, 1).getValues().flat();
+}
+
+function countNonBlank(values) {
+  return values.filter((value) => value !== '' && value !== null && value !== undefined).length;
+}
+
+function sumValues(values) {
+  return values.reduce((sum, value) => {
+    const normalized = String(value).replace(/[^0-9.-]/g, '');
+    const number = Number(normalized);
+    if (Number.isFinite(number)) return sum + number;
+    return sum;
+  }, 0);
+}
+
+function getVisionStatements() {
+  ensureVisionRows();
+  const sheet = getVisionSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  const headers = data[0];
+  const headerMap = headers.reduce((acc, value, idx) => { if (value) acc[value] = idx; return acc; }, {});
+  return data.slice(1).filter((row) => row[headerMap.focusArea]).map((row) => ({
+    focusArea: row[headerMap.focusArea],
+    threeYearVision: row[headerMap.threeYearVision] || '',
+    updatedAt: row[headerMap.updatedAt] || ''
+  }));
+}
+
+function updateVisionStatement(entry) {
+  if (!entry || !entry.focusArea) throw new Error('Missing focus area');
+  ensureVisionRows();
+  const sheet = getVisionSheet();
+  const lastRow = sheet.getLastRow();
+  const focusAreas = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
+  const rowIndex = focusAreas.findIndex((value) => value === entry.focusArea);
+  const targetRow = rowIndex >= 0 ? rowIndex + 2 : lastRow + 1;
+  const timestamp = new Date().toISOString();
+  sheet.getRange(targetRow, 1).setValue(entry.focusArea);
+  sheet.getRange(targetRow, 2).setValue(entry.threeYearVision || '');
+  sheet.getRange(targetRow, 3).setValue(timestamp);
+  return { focusArea: entry.focusArea, threeYearVision: entry.threeYearVision || '', updatedAt: timestamp };
+}
+
+/**
+ * Handle GET requests
+ */
+function doGet(e) {
+  try {
+    const action = e.parameter.action;
+    const callback = e.parameter.callback || '';
+    ensureSectionTabs();
+    ensureVisionRows();
+    getFocusGoalsSheet();
+    getPurchasesSheet();
+
+    // ── Kiosk volunteer log writes (JSONP) ─────────────────────
+    if (action === 'check-in' || action === 'check-out') {
+      var raw = (e && e.parameter && e.parameter.data) || '';
+      if (!raw) {
+        const p = JSON.stringify({ ok: false, error: 'No data' });
+        return ContentService.createTextOutput(callback ? callback + '(' + p + ');' : p)
+          .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
+      }
+      appendVolunteerLog(JSON.parse(raw));
+      const p = JSON.stringify({ ok: true });
+      return ContentService.createTextOutput(callback ? callback + '(' + p + ');' : p)
+        .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
+    }
+
+    // ── Kiosk volunteer log reads (JSONP) ──────────────────────
+    if (action === 'list-volunteer-logs') {
+      const payload = JSON.stringify({ ok: true, logs: readVolunteerLogs() });
+      if (callback) {
+        return ContentService.createTextOutput(callback + '(' + payload + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'list-sessions') {
+      const payload = JSON.stringify({ ok: true, sessions: buildVolunteerSessions() });
+      if (callback) {
+        return ContentService.createTextOutput(callback + '(' + payload + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'getAll') {
+      if (!USE_SHEETS) return ContentService.createTextOutput(JSON.stringify({ success: true, objects: [] })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, objects: getAllObjects() })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getMetrics') {
+      const donationsSheet = getSheetById(DONATIONS_SHEET_ID, DONATIONS_SHEET_NAME);
+      const sponsorsSheet = getSheetById(SPONSORS_SHEET_ID, SPONSORS_SHEET_NAME);
+      const volunteersSheet = getSheetById(VOLUNTEERS_SHEET_ID, VOLUNTEERS_SHEET_NAME);
+      const eventsSheet = getSheetById(EVENTS_SHEET_ID);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, metrics: { donationsTotal: sumValues(getColumnValues(donationsSheet, 2)), sponsorsCount: countNonBlank(getColumnAValues(sponsorsSheet)), volunteersCount: countNonBlank(getColumnAValues(volunteersSheet)), eventsCount: countNonBlank(getColumnAValues(eventsSheet)) } })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getSectionSnapshots') {
+      const results = {};
+      SECTION_TABS.forEach((tabName) => {
+        const sheet = getSheetById(SECTIONS_SHEET_ID, tabName);
+        const values = readSnapshotValues(sheet);
+        results[tabName] = { area: values[0] || tabName, lead: values[1] || '', budget: values[2] || '', volunteers: values[3] || '' };
+      });
+      return ContentService.createTextOutput(JSON.stringify({ success: true, sections: results })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getVisionStatements') {
+      return ContentService.createTextOutput(JSON.stringify({ success: true, vision: getVisionStatements() })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getFocusAreaGoals') {
+      return ContentService.createTextOutput(JSON.stringify({ success: true, goals: getFocusAreaGoals() })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getPurchases') {
+      return ContentService.createTextOutput(JSON.stringify({ success: true, purchases: getPurchases(e.parameter.section || null) })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getHours') {
+      var ss = SpreadsheetApp.openById(HOURS_SHEET_ID);
+      var sheet = ss.getSheetByName(HOURS_SHEET_NAME);
+      var data = sheet.getDataRange().getValues();
+      var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      var rows = [];
+      for (var i = 1; i < data.length; i++) {
+        var row = data[i];
+        var name = String(row[0] || '').trim();
+        if (!name) continue;
+        var entry = { name: name, total_hours: parseFloat(row[1]) || 0 };
+        months.forEach(function(m, idx) { entry[m] = parseFloat(row[2 + idx]) || 0; });
+        rows.push(entry);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, hours: rows })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getVolunteers') {
+      const sheet = getSheetById(VOLUNTEERS_SHEET_ID, VOLUNTEERS_SHEET_NAME);
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) return ContentService.createTextOutput(JSON.stringify({ success: true, volunteers: [] })).setMimeType(ContentService.MimeType.JSON);
+      const data = sheet.getRange(2, 1, lastRow - 1, 19).getValues();
+      const volunteers = data.map((row, idx) => ({ rowIndex: idx + 2, firstName: row[0] || '', lastName: row[1] || '', team: row[2] || '', overviewNotes: row[3] || '', status: row[4] || '', email: row[5] || '', phoneNumber: row[6] || '', notes: row[9] || '', nametag: row[11] || '' })).filter((v) => v.firstName || v.lastName);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, volunteers })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (action === 'getQuarterlyUpdates') {
+      const updates = [];
+      const parseCheckedList = (value) => {
+        const tokens = String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+        const otherToken = tokens.find((item) => item.toLowerCase().startsWith('other:'));
+        const otherText = otherToken ? otherToken.replace(/^Other:\s*/i, '').trim() : '';
+        const normalized = tokens.map((item) => item.replace(/^Other:\s*/i, 'Other'));
+        return { tokens: normalized, otherText };
+      };
+      SECTION_TABS.forEach((tabName) => {
+        const sheet = getQuarterlySheet(tabName);
+        const headerValues = sheet.getRange(1, 1, 1, QUARTERLY_HEADERS.length).getValues()[0];
+        const headerMap = headerValues.reduce((acc, value, idx) => { if (value) acc[value] = idx + 1; return acc; }, {});
+        const reviewHeaderValues = sheet.getRange(REVIEW_HEADER_ROW, 1, 1, REVIEW_HEADERS.length).getValues()[0];
+        const reviewHeaderMap = reviewHeaderValues.reduce((acc, value, idx) => { if (value) acc[value] = idx + 1; return acc; }, {});
+        const getCol = (map, fallbackIndex) => map[QUARTERLY_HEADERS[fallbackIndex - 1]] || fallbackIndex;
+        const getReviewCol = (map, fallbackIndex) => map[REVIEW_HEADERS[fallbackIndex - 1]] || fallbackIndex;
+        const legacyRowMap = LEGACY_QUARTERLY_LABELS.reduce((acc, label, idx) => { acc[label] = idx + 2; return acc; }, {});
+        const legacyReviewRowMap = LEGACY_REVIEW_LABELS.reduce((acc, label, idx) => { acc[label] = LEGACY_QUARTERLY_LABELS.length + idx + 2; return acc; }, {});
+        const hasLegacyLayout = sheet.getRange(1, 1).getValue() === 'Question';
+        ['Q1', 'Q2', 'Q3', 'Q4'].forEach((quarterKey) => {
+          const rowIndex = QUARTER_ROW_MAP[quarterKey];
+          const primaryFocus = sheet.getRange(rowIndex, getCol(headerMap, 4)).getValue();
+          const legacyColIndex = quarterKey === 'Q1' ? 2 : quarterKey === 'Q2' ? 3 : quarterKey === 'Q3' ? 4 : null;
+          const legacyPrimaryFocus = legacyColIndex ? sheet.getRange(legacyRowMap['Primary Focus'], legacyColIndex).getValue() : '';
+          const shouldUseLegacy = !primaryFocus && legacyColIndex && (hasLegacyLayout || legacyPrimaryFocus);
+          const challengesCheckedValue = shouldUseLegacy ? sheet.getRange(legacyRowMap['Challenges (checked)'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, QUARTERLY_HEADERS.indexOf('Challenges (checked)') + 1)).getValue();
+          const supportTypesCheckedValue = shouldUseLegacy ? sheet.getRange(legacyRowMap['Support Types (checked)'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, QUARTERLY_HEADERS.indexOf('Support Types (checked)') + 1)).getValue();
+          const parsedChallenges = parseCheckedList(challengesCheckedValue);
+          const parsedSupport = parseCheckedList(supportTypesCheckedValue);
+          const challengeSet = parsedChallenges.tokens.reduce((acc, item) => { acc[item] = true; return acc; }, {});
+          const supportSet = parsedSupport.tokens.reduce((acc, item) => { acc[item] = true; return acc; }, {});
+          const nextQuarterFocusValue = shouldUseLegacy ? '' : sheet.getRange(rowIndex, getCol(headerMap, QUARTERLY_HEADERS.indexOf('Next Quarter Focus') + 1)).getValue();
+          const reviewRow = REVIEW_ROW_MAP[quarterKey];
+          const reviewPayload = {
+            statusAfterReview: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 1)).getValue(),
+            actionsAssigned: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 2)).getValue(),
+            crossAreaImpacts: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 3)).getValue(),
+            areasImpacted: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 4)).getValue(),
+            coordinationNeeded: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 5)).getValue(),
+            priorityConfirmation: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 6)).getValue(),
+            escalationFlag: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 7)).getValue(),
+            reviewCompletedOn: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 8)).getValue(),
+            nextCheckInDate: sheet.getRange(reviewRow, getReviewCol(reviewHeaderMap, 9)).getValue()
+          };
+          if (shouldUseLegacy) {
+            reviewPayload.statusAfterReview = sheet.getRange(legacyReviewRowMap['Status After Review'], legacyColIndex).getValue();
+            reviewPayload.actionsAssigned = sheet.getRange(legacyReviewRowMap['Actions Assigned'], legacyColIndex).getValue();
+            reviewPayload.crossAreaImpacts = sheet.getRange(legacyReviewRowMap['Cross-Area Impacts'], legacyColIndex).getValue();
+            reviewPayload.areasImpacted = sheet.getRange(legacyReviewRowMap['Area(s) impacted'], legacyColIndex).getValue();
+            reviewPayload.coordinationNeeded = sheet.getRange(legacyReviewRowMap['Coordination needed'], legacyColIndex).getValue();
+            reviewPayload.priorityConfirmation = sheet.getRange(legacyReviewRowMap['Priority Confirmation (Next Quarter)'], legacyColIndex).getValue();
+            reviewPayload.escalationFlag = sheet.getRange(legacyReviewRowMap['Escalation Flag'], legacyColIndex).getValue();
+            reviewPayload.reviewCompletedOn = sheet.getRange(legacyReviewRowMap['Review completed on'], legacyColIndex).getValue();
+            reviewPayload.nextCheckInDate = sheet.getRange(legacyReviewRowMap['Next check-in date'], legacyColIndex).getValue();
+          }
+          const hasQuarterData = primaryFocus !== '' && primaryFocus !== null && primaryFocus !== undefined;
+          const hasReviewData = Object.keys(reviewPayload).some((key) => { const value = reviewPayload[key]; return value !== '' && value !== null && value !== undefined; });
+          if (!hasQuarterData && !hasReviewData && !shouldUseLegacy) return;
+          const goals = [
+            { goal: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 1'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 5)).getValue(), status: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 1 Status'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 6)).getValue(), summary: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 1 Summary'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 7)).getValue() },
+            { goal: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 2'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 8)).getValue(), status: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 2 Status'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 9)).getValue(), summary: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 2 Summary'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 10)).getValue() },
+            { goal: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 3'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 11)).getValue(), status: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 3 Status'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 12)).getValue(), summary: shouldUseLegacy ? sheet.getRange(legacyRowMap['Goal 3 Summary'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 13)).getValue() }
+          ].filter((goal) => goal.goal || goal.summary || goal.status);
+          updates.push({
+            focusArea: tabName,
+            quarter: quarterKey,
+            submittedDate: shouldUseLegacy ? sheet.getRange(legacyRowMap['Date Submitted'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 3)).getValue(),
+            payload: {
+              primaryFocus: shouldUseLegacy ? legacyPrimaryFocus : primaryFocus,
+              goals,
+              wins: shouldUseLegacy ? sheet.getRange(legacyRowMap['What Went Well'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 14)).getValue(),
+              challenges: { capacity: !!challengeSet['Capacity'], budget: !!challengeSet['Budget'], scheduling: !!challengeSet['Scheduling'], coordination: !!challengeSet['Coordination'], external: !!challengeSet['External'], other: !!challengeSet['Other'], otherText: parsedChallenges.otherText, details: shouldUseLegacy ? sheet.getRange(legacyRowMap['Challenges Details'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 16)).getValue() },
+              challengesChecked: challengesCheckedValue || '',
+              supportNeeded: shouldUseLegacy ? sheet.getRange(legacyRowMap['Support Needed'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 17)).getValue(),
+              supportTypes: { staff: !!supportSet['Staff/Volunteer'], marketing: !!supportSet['Marketing/Comms'], board: !!supportSet['Board Guidance'], funding: !!supportSet['Funding'], facilities: !!supportSet['Facilities/Logistics'], other: !!supportSet['Other'], otherText: parsedSupport.otherText },
+              supportTypesChecked: supportTypesCheckedValue || '',
+              nextQuarterFocus: nextQuarterFocusValue || '',
+              nextPriorities: [
+                shouldUseLegacy ? sheet.getRange(legacyRowMap['Next Priority 1'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 21)).getValue(),
+                shouldUseLegacy ? sheet.getRange(legacyRowMap['Next Priority 2'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 22)).getValue(),
+                shouldUseLegacy ? sheet.getRange(legacyRowMap['Next Priority 3'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 23)).getValue()
+              ],
+              decisionsNeeded: shouldUseLegacy ? sheet.getRange(legacyRowMap['Decisions Needed'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 24)).getValue(),
+              strategicAlignment: shouldUseLegacy ? sheet.getRange(legacyRowMap['Strategic Alignment'], legacyColIndex).getValue() : sheet.getRange(rowIndex, getCol(headerMap, 25)).getValue(),
+              review: reviewPayload
+            }
+          });
+        });
+        const finalValue = sheet.getRange(FINAL_TALLY_ROW, 2).getValue();
+        if (finalValue) updates.push({ focusArea: tabName, quarter: 'Final', submittedDate: '', payload: { finalTallyOverview: finalValue } });
+      });
+      return ContentService.createTextOutput(JSON.stringify({ success: true, updates })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' })).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * Handle POST requests
+ */
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    ensureSectionTabs();
+    ensureVisionRows();
+    getFocusGoalsSheet();
+    getPurchasesSheet();
+    let result;
+    switch (action) {
+      case 'check-in':
+      case 'check-out':
+        result = appendVolunteerLog(data);
+        break;
+      case 'create': if (!USE_SHEETS) throw new Error('Sheets disabled'); result = createObject(data.object); break;
+      case 'update': if (!USE_SHEETS) throw new Error('Sheets disabled'); result = updateObject(data.object); break;
+      case 'delete': if (!USE_SHEETS) throw new Error('Sheets disabled'); result = deleteObject(data.id); break;
+      case 'uploadImage': result = uploadImage(data); break;
+      case 'submitQuarterlyUpdate': result = submitQuarterlyUpdate(data.form); break;
+      case 'submitReviewUpdate': result = submitReviewUpdate(data.review); break;
+      case 'updateVisionStatement': result = updateVisionStatement(data.vision); break;
+      case 'updateFocusAreaGoal': result = updateFocusAreaGoal(data.goal); break;
+      case 'deleteFocusAreaGoal': result = deleteFocusAreaGoal(data.id); break;
+      case 'savePurchase': result = savePurchase(data.purchase); break;
+      case 'deletePurchase': result = deletePurchase(data.id); break;
+      case 'updateVolunteerNotes': {
+        const { rowIndex, notes } = data;
+        const volSheet = getSheetById(VOLUNTEERS_SHEET_ID, VOLUNTEERS_SHEET_NAME);
+        volSheet.getRange(rowIndex, 10).setValue(notes);
+        result = { rowIndex, notes };
+        break;
+      }
+      default:
+        return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' })).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: true, result })).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getAllObjects() {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  const headers = data[0];
+  const objects = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const obj = {};
+    for (let j = 0; j < headers.length; j++) {
+      const header = headers[j];
+      let value = row[j];
+      if (header === 'updates') { try { value = value ? JSON.parse(value) : []; } catch (e) { value = []; } }
+      obj[header] = value;
+    }
+    if (obj.id) objects.push(obj);
+  }
+  return objects;
+}
+
+function createObject(obj) {
+  const sheet = getSheet();
+  if (!obj.id) obj.id = new Date().getTime().toString();
+  const now = new Date().toISOString();
+  obj.createdAt = obj.createdAt || now;
+  obj.updatedAt = now;
+  const rowData = HEADERS.map(header => { const value = obj[header]; if (header === 'updates') return JSON.stringify(value || []); return value || ''; });
+  sheet.appendRow(rowData);
+  return obj;
+}
+
+function updateObject(obj) {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+  for (let i = 1; i < data.length; i++) { if (data[i][0] === obj.id) { rowIndex = i + 1; break; } }
+  if (rowIndex === -1) return createObject(obj);
+  obj.updatedAt = new Date().toISOString();
+  const rowData = HEADERS.map(header => { const value = obj[header]; if (header === 'updates') return JSON.stringify(value || []); return value || ''; });
+  sheet.getRange(rowIndex, 1, 1, HEADERS.length).setValues([rowData]);
+  return obj;
+}
+
+function deleteObject(id) {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) { if (data[i][0] === id) { sheet.deleteRow(i + 1); return { deleted: true, id }; } }
+  return { deleted: false, id, error: 'Not found' };
+}
+
+function uploadImage(data) {
+  if (!data || !data.data) throw new Error('Missing file data');
+  const bytes = Utilities.base64Decode(data.data);
+  const mimeType = data.mimeType || 'application/octet-stream';
+  const filename = data.filename || 'file';
+  const blob = Utilities.newBlob(bytes, mimeType, filename);
+  const folder = getImageFolder();
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { id: file.getId(), url: `https://drive.google.com/uc?export=view&id=${file.getId()}`, name: file.getName() };
+}
+
+function submitQuarterlyUpdate(form) {
+  if (!form) throw new Error('Missing form data');
+  const sheet = getQuarterlySheet(form.focusArea || '');
+  const headerValues = sheet.getRange(1, 1, 1, QUARTERLY_HEADERS.length).getValues()[0];
+  const headerMap = headerValues.reduce((acc, value, idx) => { if (value) acc[value] = idx + 1; return acc; }, {});
+  const getCol = (label, fallbackIndex) => headerMap[label] || fallbackIndex;
+  if (form.quarter === 'Final') { sheet.getRange(FINAL_TALLY_ROW, 2).setValue(form.finalTallyOverview || ''); return { saved: true }; }
+  const normalizeNone = (value) => { const text = String(value || '').trim(); return text ? value : 'None noted'; };
+  const challengesCheckedOverride = String(form.challengesCheckedOverride || '').trim();
+  const supportTypesCheckedOverride = String(form.supportTypesCheckedOverride || '').trim();
+  const rowIndex = QUARTER_ROW_MAP[form.quarter] || QUARTER_ROW_MAP.Q1;
+  const preservePrimaryGoals = !!form.preservePrimaryGoals;
+  const nextQuarter = form.quarter === 'Q1' ? 'Q2' : form.quarter === 'Q2' ? 'Q3' : form.quarter === 'Q3' ? 'Q4' : null;
+  if (form.primaryOnly) {
+    const primaryValues = { Organizational: form.focusArea || '', 'Quarter / Year': `${form.quarter || ''} ${form.year || ''}`.trim(), 'Date Submitted': form.submittedDate || '', 'Primary Focus': form.primaryFocus || '', 'Goal 1': form.goals?.[0]?.goal || '', 'Goal 1 Status': form.goals?.[0]?.status || '', 'Goal 1 Summary': form.goals?.[0]?.summary || '', 'Goal 2': form.goals?.[1]?.goal || '', 'Goal 2 Status': form.goals?.[1]?.status || '', 'Goal 2 Summary': form.goals?.[1]?.summary || '', 'Goal 3': form.goals?.[2]?.goal || '', 'Goal 3 Status': form.goals?.[2]?.status || '', 'Goal 3 Summary': form.goals?.[2]?.summary || '' };
+    Object.keys(primaryValues).forEach((label) => { const colIndex = getCol(label, QUARTERLY_HEADERS.indexOf(label) + 1); if (colIndex > 0) sheet.getRange(rowIndex, colIndex).setValue(primaryValues[label]); });
+    return { saved: true };
+  }
+  const valuesByLabel = {
+    Organizational: form.focusArea || '', 'Quarter / Year': `${form.quarter || ''} ${form.year || ''}`.trim(), 'Date Submitted': form.submittedDate || '',
+    'What Went Well': normalizeNone(form.wins),
+    'Challenges (checked)': challengesCheckedOverride || [form.challenges?.capacity ? 'Capacity' : '', form.challenges?.budget ? 'Budget' : '', form.challenges?.scheduling ? 'Scheduling' : '', form.challenges?.coordination ? 'Coordination' : '', form.challenges?.external ? 'External' : '', form.challenges?.other ? `Other: ${form.challenges?.otherText || ''}` : ''].filter(Boolean).join(', ') || 'None noted',
+    'Challenges Details': normalizeNone(form.challenges?.details), 'Support Needed': normalizeNone(form.supportNeeded), 'Areas That Could Assist': form.supportAreas || '',
+    'Support Types (checked)': supportTypesCheckedOverride || [form.supportTypes?.staff ? 'Staff/Volunteer' : '', form.supportTypes?.marketing ? 'Marketing/Comms' : '', form.supportTypes?.board ? 'Board Guidance' : '', form.supportTypes?.funding ? 'Funding' : '', form.supportTypes?.facilities ? 'Facilities/Logistics' : '', form.supportTypes?.other ? `Other: ${form.supportTypes?.otherText || ''}` : ''].filter(Boolean).join(', ') || 'None noted',
+    'Other Areas We Can Help': form.crossHelp || '', 'Next Quarter Focus': normalizeNone(form.nextQuarterFocus), 'Next Priority 1': form.nextPriorities?.[0] || '', 'Next Priority 2': form.nextPriorities?.[1] || '', 'Next Priority 3': form.nextPriorities?.[2] || '', 'Decisions Needed': normalizeNone(form.decisionsNeeded), 'Strategic Alignment': form.strategicAlignment || '', 'Uploaded Files': (form.uploadedFiles || []).map((file) => file.url).join(', ')
+  };
+  if (!preservePrimaryGoals) {
+    valuesByLabel['Primary Focus'] = form.primaryFocus || '';
+    valuesByLabel['Goal 1'] = form.goals?.[0]?.goal || ''; valuesByLabel['Goal 1 Status'] = form.goals?.[0]?.status || ''; valuesByLabel['Goal 1 Summary'] = form.goals?.[0]?.summary || '';
+    valuesByLabel['Goal 2'] = form.goals?.[1]?.goal || ''; valuesByLabel['Goal 2 Status'] = form.goals?.[1]?.status || ''; valuesByLabel['Goal 2 Summary'] = form.goals?.[1]?.summary || '';
+    valuesByLabel['Goal 3'] = form.goals?.[2]?.goal || ''; valuesByLabel['Goal 3 Status'] = form.goals?.[2]?.status || ''; valuesByLabel['Goal 3 Summary'] = form.goals?.[2]?.summary || '';
+  }
+  Object.keys(valuesByLabel).forEach((label) => { const colIndex = getCol(label, QUARTERLY_HEADERS.indexOf(label) + 1); if (colIndex > 0) sheet.getRange(rowIndex, colIndex).setValue(valuesByLabel[label]); });
+  if (nextQuarter) {
+    const nextRowIndex = QUARTER_ROW_MAP[nextQuarter];
+    const nextQuarterValues = { Organizational: form.focusArea || '', 'Primary Focus': normalizeNone(form.nextQuarterFocus), 'Goal 1': form.nextPriorities?.[0] || '', 'Goal 2': form.nextPriorities?.[1] || '', 'Goal 3': form.nextPriorities?.[2] || '' };
+    Object.keys(nextQuarterValues).forEach((label) => { const colIndex = getCol(label, QUARTERLY_HEADERS.indexOf(label) + 1); if (colIndex > 0) sheet.getRange(nextRowIndex, colIndex).setValue(nextQuarterValues[label]); });
+  }
+  return { saved: true };
+}
+
+function submitReviewUpdate(review) {
+  if (!review) throw new Error('Missing review data');
+  const sheet = getQuarterlySheet(review.focusArea || '');
+  const reviewHeaderValues = sheet.getRange(REVIEW_HEADER_ROW, 1, 1, REVIEW_HEADERS.length).getValues()[0];
+  const reviewHeaderMap = reviewHeaderValues.reduce((acc, value, idx) => { if (value) acc[value] = idx + 1; return acc; }, {});
+  const rowIndex = REVIEW_ROW_MAP[review.quarter] || REVIEW_ROW_MAP.Q1;
+  const valuesByLabel = { 'Status After Review': review.statusAfterReview || '', 'Actions Assigned': review.actionsAssigned || '', 'Cross-Area Impacts': review.crossAreaImpacts || '', 'Area(s) impacted': review.areasImpacted || '', 'Coordination needed': review.coordinationNeeded || '', 'Priority Confirmation (Next Quarter)': review.priorityConfirmation || '', 'Escalation Flag': review.escalationFlag || '', 'Review completed on': review.reviewCompletedOn || '', 'Next check-in date': review.nextCheckInDate || '' };
+  Object.keys(valuesByLabel).forEach((label) => { const colIndex = reviewHeaderMap[label] || REVIEW_HEADERS.indexOf(label) + 1; if (colIndex > 0) sheet.getRange(rowIndex, colIndex).setValue(valuesByLabel[label]); });
+  return { saved: true };
+}
+
+function testScript() {
+  const testObj = { title: 'Expand board development program', focusArea: 'Organizational Development', description: 'Launch quarterly board training and recruitment pipeline.', owner: 'Executive Director', coChampions: 'Board Chair, Governance Committee', status: 'On track', progress: 45, targetDate: '2026-06-30', successMetrics: '100% board seat coverage, quarterly training cadence', threeYearVision: 'Board leadership pipeline active, governance cadence steady.', annualGoals: 'Finalize recruitment plan, run two trainings, document succession map.', notes: 'Align with fundraising strategy', updates: [{ id: 'update-1', date: new Date().toISOString(), author: 'Board Chair', summary: 'First training session scheduled', details: 'Confirmed facilitation partner and agenda outline.', blockers: '', nextSteps: 'Finalize invitations', progress: 45, reviewStatus: 'Pending', reviewNotes: '' }] };
+  const created = createObject(testObj);
+  Logger.log('Created: ' + JSON.stringify(created));
+  const all = getAllObjects();
+  Logger.log('All objects: ' + JSON.stringify(all));
+  created.title = 'Updated initiative';
+  const updated = updateObject(created);
+  Logger.log('Updated: ' + JSON.stringify(updated));
+  const deleted = deleteObject(created.id);
+  Logger.log('Deleted: ' + JSON.stringify(deleted));
+}
