@@ -172,7 +172,7 @@ const { useState, useEffect } = React;
       const dutyAreas = {
         construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
         board: ['Paula Campbell', 'Wyn Spiller', 'Ken Underwood', 'Rick Panos', 'Jeff Cereghino', 'Rich Hill'],
-        landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes', 'Debbie Stackhouse', 'Bob Aha', 'Rob Shulman'],
+        landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes', 'Debbie Stackhouse', 'Bob Aha', 'Rob Shulman', 'Sherian Kutzera'],
         docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
         interiors: ['Bec Freeman', 'Lois Hensel', 'Lisa Robinson'],
         events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco', 'Nancy Sanders'],
@@ -196,11 +196,13 @@ const { useState, useEffect } = React;
 
       const loadLogs = async () => {
         // First load from localStorage for instant display
+        let localLogs = [];
         try {
           const stored =
             localStorage.getItem(LOG_STORAGE_KEY) ?? localStorage.getItem(LEGACY_LOG_STORAGE_KEY);
           if (stored) {
-            setLogs(JSON.parse(stored));
+            localLogs = JSON.parse(stored);
+            setLogs(localLogs);
           }
         } catch (error) {
           console.log('No existing logs found');
@@ -210,8 +212,13 @@ const { useState, useEffect } = React;
         try {
           const remoteLogs = await fetchVolunteerLogsFromSheet();
           if (remoteLogs && remoteLogs.length > 0) {
-            setLogs(remoteLogs);
-            localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(remoteLogs));
+            // Merge remote + local so recent check-ins not yet synced to sheets are preserved.
+            // no-cors POSTs can fail silently, so local-only entries must not be discarded.
+            const remoteKeys = new Set(remoteLogs.map(l => `${l.timestamp}|${l.name}|${l.action}`));
+            const localOnly = localLogs.filter(l => !remoteKeys.has(`${l.timestamp}|${l.name}|${l.action}`));
+            const merged = [...remoteLogs, ...localOnly];
+            setLogs(merged);
+            localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(merged));
           }
         } catch (error) {
           console.log('Could not sync from Google Sheets, using local data:', error);
@@ -273,31 +280,33 @@ const { useState, useEffect } = React;
           .sort((a, b) => a.since - b.since);
       };
 
-      const sendToGoogleSheet = async (entry) => {
-        try {
-          let url = '';
-          if (entry.type === 'volunteer') {
-            url = VOLUNTEER_SHEET_URL;
-          } else if (entry.type === 'guest' || entry.type === 'comment' || entry.type === 'wish-list') {
-            url = GUEST_FEEDBACK_SHEET_URL;
-          } else if (entry.type === 'out-of-town') {
-            url = OOT_NOTICE_SHEET_URL;
-          }
-
-          if (url) {
-            await fetch(url, {
-              redirect: 'follow',
-              method: 'POST',
-              mode: 'no-cors',
-              headers: {
-                'Content-Type': 'text/plain;charset=utf-8',
-              },
-              body: JSON.stringify(entry)
-            });
-          }
-        } catch (error) {
-          console.error('Error sending to Google Sheets:', error);
+      const sendToGoogleSheet = (entry) => {
+        let url = '';
+        if (entry.type === 'volunteer') {
+          url = VOLUNTEER_SHEET_URL;
+        } else if (entry.type === 'guest' || entry.type === 'comment' || entry.type === 'wish-list') {
+          url = GUEST_FEEDBACK_SHEET_URL;
+        } else if (entry.type === 'out-of-town') {
+          url = OOT_NOTICE_SHEET_URL;
         }
+
+        if (!url) return;
+
+        // Apps Script redirects cause POST bodies to be silently dropped (browser
+        // converts POST→GET on 302 redirect per HTTP spec). Use JSONP instead so
+        // the data travels in the URL and survives the redirect.
+        const callbackName = `__kiosk_write_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        const script = document.createElement('script');
+        const cleanup = () => {
+          try { delete window[callbackName]; } catch (_) {}
+          if (script.parentNode) script.parentNode.removeChild(script);
+        };
+        const timeout = setTimeout(cleanup, 15000);
+        window[callbackName] = () => { clearTimeout(timeout); cleanup(); };
+        script.onerror = () => { clearTimeout(timeout); cleanup(); };
+        const sep = url.includes('?') ? '&' : '?';
+        script.src = `${url}${sep}action=${entry.action}&data=${encodeURIComponent(JSON.stringify(entry))}&callback=${callbackName}`;
+        document.head.appendChild(script);
       };
 
       const jsonp = (url, timeoutMs = 12000) => {
@@ -1296,7 +1305,7 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               {isCurrentlyCheckedIn && (
                 <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-3 sm:p-4 mb-4 sm:mb-6 text-center mx-2">
-                  <p className="text-green-700 font-semibold text-base sm:text-lg"><span className="star-gold">?</span> Currently Checked In</p>
+                  <p className="text-green-700 font-semibold text-base sm:text-lg"><span className="star-gold">&#9733;</span> Currently Checked In</p>
                 </div>
               )}
 
