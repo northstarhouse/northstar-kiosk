@@ -86,83 +86,20 @@ const { useState, useEffect } = React;
       const [sheetSessions, setSheetSessions] = useState([]);
       const [sheetLogsLoading, setSheetLogsLoading] = useState(false);
       const [sheetLogsError, setSheetLogsError] = useState('');
-      const LOG_STORAGE_KEY = 'volunteer-logs';
-      const LEGACY_LOG_STORAGE_KEY = 'volunteerLogs';
       const MAX_SHIFT_HOURS = 24;
 
-      const [logs, setLogs] = useState(() => {
-        if (typeof window === 'undefined') return [];
-        const saved =
-          localStorage.getItem(LOG_STORAGE_KEY) ?? localStorage.getItem(LEGACY_LOG_STORAGE_KEY);
-
-        if (saved && !localStorage.getItem(LOG_STORAGE_KEY)) {
-          try {
-            localStorage.setItem(LOG_STORAGE_KEY, saved);
-          } catch (error) {
-            console.error('Error migrating logs:', error);
-          }
-        }
-        return saved ? JSON.parse(saved) : [];
-      });
-
-      useEffect(() => {
-        try {
-          localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
-        } catch (error) {
-          console.error('Error saving logs:', error);
-        }
-      }, [logs]);
+      const [logs, setLogs] = useState([]);
 
       const [selectedVolunteerForHours, setSelectedVolunteerForHours] = useState(null);
       const [commentText, setCommentText] = useState('');
-      const TASKS_CACHE_KEY = 'open-tasks-cache';
-      const [tasks, setTasks] = useState(() => {
-        if (typeof window === 'undefined') return [];
-        try {
-          const raw = localStorage.getItem(TASKS_CACHE_KEY);
-          if (!raw) return [];
-          const parsed = JSON.parse(raw);
-          return Array.isArray(parsed?.tasks) ? parsed.tasks : [];
-        } catch {
-          return [];
-        }
-      });
+      const [tasks, setTasks] = useState([]);
       const [tasksLoading, setTasksLoading] = useState(false);
       const [tasksError, setTasksError] = useState('');
-      const [lastTasksSyncAt, setLastTasksSyncAt] = useState(() => {
-        if (typeof window === 'undefined') return 0;
-        try {
-          const raw = localStorage.getItem(TASKS_CACHE_KEY);
-          if (!raw) return 0;
-          const parsed = JSON.parse(raw);
-          return Number(parsed?.syncedAt) || 0;
-        } catch {
-          return 0;
-        }
-      });
+      const [lastTasksSyncAt, setLastTasksSyncAt] = useState(0);
       const [selectedTask, setSelectedTask] = useState(null);
       const [taskSignupName, setTaskSignupName] = useState('');
-      const TASK_ASSIGNMENTS_STORAGE_KEY = 'task-assignments';
-      const [taskAssignments, setTaskAssignments] = useState(() => {
-        if (typeof window === 'undefined') return [];
-        try {
-          const raw = localStorage.getItem(TASK_ASSIGNMENTS_STORAGE_KEY);
-          if (!raw) return [];
-          const parsed = JSON.parse(raw);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch {
-          return [];
-        }
-      });
+      const [taskAssignments, setTaskAssignments] = useState([]);
       const [checkoutPendingTasks, setCheckoutPendingTasks] = useState([]);
-
-      useEffect(() => {
-        try {
-          localStorage.setItem(TASK_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(taskAssignments));
-        } catch (error) {
-          console.error('Error saving task assignments:', error);
-        }
-      }, [taskAssignments]);
 
       const VOLUNTEER_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwbVk0SB6geUv4xcbxkps06qXwkggMfrD59GMlC_0gRRjQ8p4rr4FNCqgEeY04RrAU_/exec';
       const GUEST_FEEDBACK_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcjKJHX7g_NSx9yHgF3hTr3qUNfQJ0xSjJEqRXEUc7SqtKBsNvsMW7cOC3qcawRbdx/exec';
@@ -195,41 +132,11 @@ const { useState, useEffect } = React;
       }, []);
 
       const loadLogs = async () => {
-        // First load from localStorage for instant display
-        let localLogs = [];
-        try {
-          const stored =
-            localStorage.getItem(LOG_STORAGE_KEY) ?? localStorage.getItem(LEGACY_LOG_STORAGE_KEY);
-          if (stored) {
-            localLogs = JSON.parse(stored);
-            setLogs(localLogs);
-          }
-        } catch (error) {
-          console.log('No existing logs found');
-        }
-
-        // Then sync from Google Sheets to get latest data from all devices
         try {
           const remoteLogs = await fetchVolunteerLogsFromSheet();
-          if (remoteLogs && remoteLogs.length > 0) {
-            // Merge remote + local so recent check-ins not yet synced to sheets are preserved.
-            // no-cors POSTs can fail silently, so local-only entries must not be discarded.
-            const remoteKeys = new Set(remoteLogs.map(l => `${l.timestamp}|${l.name}|${l.action}`));
-            const localOnly = localLogs.filter(l => !remoteKeys.has(`${l.timestamp}|${l.name}|${l.action}`));
-            const merged = [...remoteLogs, ...localOnly];
-            setLogs(merged);
-            localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(merged));
-          }
+          if (remoteLogs) setLogs(remoteLogs);
         } catch (error) {
-          console.log('Could not sync from Google Sheets, using local data:', error);
-        }
-      };
-
-      const saveLogs = (newLogs) => {
-        try {
-          setLogs(newLogs);
-        } catch (error) {
-          console.error('Error saving logs:', error);
+          console.log('Could not load logs from Google Sheets:', error);
         }
       };
 
@@ -481,16 +388,7 @@ const { useState, useEffect } = React;
           .then((result) => {
             if (!cancelled) {
               setTasks(result);
-              const syncedAt = Date.now();
-              setLastTasksSyncAt(syncedAt);
-              try {
-                localStorage.setItem(
-                  TASKS_CACHE_KEY,
-                  JSON.stringify({ syncedAt, tasks: result })
-                );
-              } catch (error) {
-                console.error('Error caching tasks:', error);
-              }
+              setLastTasksSyncAt(Date.now());
             }
           })
           .catch((err) => {
@@ -517,9 +415,13 @@ const { useState, useEffect } = React;
       }, [screen, lastTasksSyncAt]);
 
       const addLog = (entry) => {
-        const newLogs = [...logs, entry];
-        saveLogs(newLogs);
+        // Optimistic update so UI reflects the action immediately
+        setLogs(prev => [...prev, entry]);
         sendToGoogleSheet(entry);
+        // Re-fetch from sheet after a short delay to confirm the write landed
+        if (entry.type === 'volunteer') {
+          setTimeout(() => loadLogs(), 4000);
+        }
       };
 
       const openActionSelect = (volunteer, backScreen = 'volunteer-select') => {
