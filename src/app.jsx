@@ -2094,15 +2094,13 @@ for (let i = 0; i < todayLogs.length; i++) {
 
               <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-4 sm:mb-8 text-center font-semibold px-2">Calendar</h2>
 
-              <div className="w-full flex justify-center">
+              <div className="w-full" style={{ position: 'relative', paddingBottom: '75%', height: 0 }}>
                 <iframe
-                  src="https://calendar.google.com/calendar/embed?src=thenorthstarhouse%40gmail.com&ctz=America%2FLos_Angeles&mode=AGENDA"
-                  style={{ border: 0 }}
-                  width="800"
-                  height="600"
+                  src="https://calendar.google.com/calendar/embed?src=thenorthstarhouse%40gmail.com&ctz=America%2FLos_Angeles&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0"
+                  style={{ border: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                   frameBorder="0"
                   scrolling="no"
-                  className="max-w-full rounded-2xl"
+                  className="rounded-2xl"
                 ></iframe>
               </div>
             </div>
