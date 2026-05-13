@@ -524,6 +524,24 @@ const { useState, useEffect, useRef } = React;
         };
 
         addLog(entry);
+
+        // Write to Supabase so the portal can read it
+        fetch('https://uvzwhhwzelaelfhfkvdb.supabase.co/rest/v1/oot_notices', {
+          method: 'POST',
+          headers: {
+            apikey: 'sb_publishable_EbFMfEbyEp3gASl-GZm3tQ_LnPEe5do',
+            Authorization: 'Bearer sb_publishable_EbFMfEbyEp3gASl-GZm3tQ_LnPEe5do',
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal'
+          },
+          body: JSON.stringify({
+            name: outOfTownData.name.trim(),
+            start_date: outOfTownData.startDate,
+            end_date: outOfTownData.endDate,
+            notes: outOfTownData.notes.trim() || null
+          })
+        }).catch(function() {});
+
         setLastConfirmation({ type: 'out-of-town' });
         setScreen('confirmation');
         setTimeout(() => {
