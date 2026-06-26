@@ -107,6 +107,9 @@ const { useState, useEffect, useRef } = React;
       const OOT_NOTICE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzcuMhZ1h15zP7IgYhyCBChgkx_mbe23G6756V2_lHNT1grfgKR-AuZxbHt3t806h8-/exec';
       const OPEN_TASKS_SHEET_URL = 'https://script.google.com/macros/s/AKfycby3eHEUf-azuXfXgzyytQSdxgegin6ObbUzjTQ4FjfshrptAtYVz3Hs7rwV8-VHB-IQ/exec';
 
+      const SUPABASE_URL = 'https://uvzwhhwzelaelfhfkvdb.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_EbFMfEbyEp3gASl-GZm3tQ_LnPEe5do';
+
       const dutyAreas = {
         construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
         board: ['Paula Campbell', 'Wyn Spiller', 'Ken Underwood', 'Rick Panos', 'Jeff Cereghino', 'Rich Hill'],
@@ -133,6 +136,15 @@ const { useState, useEffect, useRef } = React;
       }, []);
 
       const loadLogs = async () => {
+        try {
+          const supabaseLogs = await fetchLogsFromSupabase();
+          if (supabaseLogs && supabaseLogs.length > 0) {
+            setLogs(supabaseLogs);
+            return;
+          }
+        } catch (e) {
+          console.log('Could not load from Supabase, trying Google Sheets:', e);
+        }
         try {
           const remoteLogs = await fetchVolunteerLogsFromSheet();
           if (remoteLogs) setLogs(remoteLogs);
@@ -292,6 +304,45 @@ const { useState, useEffect, useRef } = React;
         }
       };
 
+      const sendToSupabase = async (entry) => {
+        if (entry.type !== 'volunteer') return;
+        try {
+          await fetch(`${SUPABASE_URL}/rest/v1/kiosk_logs`, {
+            method: 'POST',
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal'
+            },
+            body: JSON.stringify({
+              timestamp: entry.timestamp,
+              name: entry.name,
+              type: entry.type,
+              duty: entry.duty || null,
+              action: entry.action,
+              source: entry.source || null
+            })
+          });
+        } catch (e) {
+          console.error('Supabase write failed:', e);
+        }
+      };
+
+      const fetchLogsFromSupabase = async () => {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/kiosk_logs?type=eq.volunteer&order=timestamp.asc&select=timestamp,name,type,duty,action,source`,
+          {
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          }
+        );
+        if (!res.ok) throw new Error(`Supabase fetch failed: ${res.status}`);
+        return res.json();
+      };
+
       const upsertTaskAssignment = (task, volunteer, status = 'in-progress') => {
         const name = (volunteer || '').trim();
         const nameKey = name.toLowerCase();
@@ -354,21 +405,32 @@ const { useState, useEffect, useRef } = React;
 
           setSheetLogsLoading(true);
           try {
-            const remoteSessions = await fetchVolunteerSessionsFromSheet();
-            if (cancelled) return;
-            setSheetSessions(remoteSessions);
-            setHoursDataSource('sheets');
-          } catch (error) {
             try {
-              const remoteLogs = await fetchVolunteerLogsFromSheet();
+              const supabaseLogs = await fetchLogsFromSupabase();
               if (cancelled) return;
-              setSheetLogs(remoteLogs);
+              if (supabaseLogs && supabaseLogs.length > 0) {
+                setSheetLogs(supabaseLogs);
+                setHoursDataSource('supabase');
+                return;
+              }
+            } catch (e) {}
+            try {
+              const remoteSessions = await fetchVolunteerSessionsFromSheet();
+              if (cancelled) return;
+              setSheetSessions(remoteSessions);
               setHoursDataSource('sheets');
-            } catch (error2) {
-              if (cancelled) return;
-              setSheetLogsError(
-                "Couldn't load hours from Google Sheets (read endpoint not enabled yet). Showing local kiosk data."
-              );
+            } catch (error) {
+              try {
+                const remoteLogs = await fetchVolunteerLogsFromSheet();
+                if (cancelled) return;
+                setSheetLogs(remoteLogs);
+                setHoursDataSource('sheets');
+              } catch (error2) {
+                if (cancelled) return;
+                setSheetLogsError(
+                  "Couldn't load hours from any source. Showing local kiosk data."
+                );
+              }
             }
           } finally {
             if (!cancelled) setSheetLogsLoading(false);
@@ -425,8 +487,8 @@ const { useState, useEffect, useRef } = React;
         // Optimistic update so UI reflects the action immediately
         setLogs(prev => [...prev, entry]);
         sendToGoogleSheet(entry);
-        // Re-fetch from sheet after a short delay to confirm the write landed
         if (entry.type === 'volunteer') {
+          sendToSupabase(entry);
           setTimeout(() => loadLogs(), 4000);
         }
       };
@@ -526,11 +588,11 @@ const { useState, useEffect, useRef } = React;
         addLog(entry);
 
         // Write to Supabase so the portal can read it
-        fetch('https://uvzwhhwzelaelfhfkvdb.supabase.co/rest/v1/oot_notices', {
+        fetch(`${SUPABASE_URL}/rest/v1/oot_notices`, {
           method: 'POST',
           headers: {
-            apikey: 'sb_publishable_EbFMfEbyEp3gASl-GZm3tQ_LnPEe5do',
-            Authorization: 'Bearer sb_publishable_EbFMfEbyEp3gASl-GZm3tQ_LnPEe5do',
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
             Prefer: 'return=minimal'
           },
@@ -2356,7 +2418,7 @@ for (let i = 0; i < todayLogs.length; i++) {
               
               <h2 className="text-4xl font-serif text-stone-800 mb-4 text-center font-semibold">{selectedVolunteerForHours}</h2>
               <div className="text-center text-stone-600 mb-6">
-                {sheetLogsLoading ? 'Loading hours from Google Sheets...' : `Hours source: ${hoursDataSource}`}
+                {sheetLogsLoading ? 'Loading hours...' : `Hours source: ${hoursDataSource}`}
               </div>
               {sheetLogsError && (
                 <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-6 text-center text-amber-800 font-semibold">
