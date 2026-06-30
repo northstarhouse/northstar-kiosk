@@ -330,17 +330,29 @@ const { useState, useEffect, useRef } = React;
       };
 
       const fetchLogsFromSupabase = async () => {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/kiosk_logs?type=eq.volunteer&order=timestamp.asc&select=timestamp,name,type,duty,action,source`,
-          {
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+        // Supabase caps each response at 1000 rows by default, so page through
+        // with Range until a page comes back short (i.e. we've hit the end).
+        const pageSize = 1000;
+        let offset = 0;
+        let allRows = [];
+        while (true) {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/kiosk_logs?type=eq.volunteer&order=timestamp.asc&select=timestamp,name,type,duty,action,source`,
+            {
+              headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                Range: `${offset}-${offset + pageSize - 1}`
+              }
             }
-          }
-        );
-        if (!res.ok) throw new Error(`Supabase fetch failed: ${res.status}`);
-        return res.json();
+          );
+          if (!res.ok) throw new Error(`Supabase fetch failed: ${res.status}`);
+          const page = await res.json();
+          allRows = allRows.concat(page);
+          if (page.length < pageSize) break;
+          offset += pageSize;
+        }
+        return allRows;
       };
 
       const upsertTaskAssignment = (task, volunteer, status = 'in-progress') => {
