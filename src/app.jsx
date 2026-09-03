@@ -1,5 +1,16 @@
 const { useState, useEffect, useRef } = React;
 
+    // Volunteer photo helpers. "Picture URL" in the 2026 Volunteers table is a
+    // Google Drive share link; turn it into a directly-loadable thumbnail.
+    const driveThumb = (url) => {
+      if (!url) return null;
+      const i = url.indexOf('/d/');
+      if (i === -1) return url;
+      const id = url.substring(i + 3).split('/')[0].split('?')[0];
+      return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w200';
+    };
+    const nameKey = (s) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
     // Icon components
     const ArrowLeft = () => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -90,6 +101,8 @@ const { useState, useEffect, useRef } = React;
       const MAX_SHIFT_HOURS = 24;
 
       const [logs, setLogs] = useState([]);
+      const [volunteerPhotos, setVolunteerPhotos] = useState({}); // nameKey -> thumbnail URL
+      const [photoFailed, setPhotoFailed] = useState({});         // nameKey -> true when the img 404s
 
       const [selectedVolunteerForHours, setSelectedVolunteerForHours] = useState(null);
       const [commentText, setCommentText] = useState('');
@@ -133,7 +146,64 @@ const { useState, useEffect, useRef } = React;
 
       useEffect(() => {
         loadLogs();
+        loadVolunteerPhotos();
       }, []);
+
+      const loadVolunteerPhotos = async () => {
+        try {
+          const res = await fetch(
+            SUPABASE_URL + '/rest/v1/' + encodeURIComponent('2026 Volunteers') +
+              '?select=' + encodeURIComponent('"First Name","Last Name","Picture URL"'),
+            { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } }
+          );
+          if (!res.ok) return;
+          const rows = await res.json();
+          const map = {};
+          (rows || []).forEach((r) => {
+            const full = ((r['First Name'] || '').trim() + ' ' + (r['Last Name'] || '').trim()).trim();
+            const thumb = driveThumb(r['Picture URL']);
+            if (full && thumb) map[nameKey(full)] = thumb;
+          });
+          setVolunteerPhotos(map);
+        } catch (e) {
+          console.log('Could not load volunteer photos:', e);
+        }
+      };
+
+      // Circular volunteer photo, or a gold star when there's no photo (or it fails to load).
+      const VolunteerAvatar = ({ name, size = 40, ring = null }) => {
+        const key = nameKey(name);
+        const src = !photoFailed[key] && volunteerPhotos[key];
+        const base = { width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'block' };
+        const wrap = ring
+          ? { padding: Math.max(3, Math.round(size * 0.06)), borderRadius: '50%', background: ring, display: 'inline-block', lineHeight: 0 }
+          : null;
+        const inner = src ? (
+          <img
+            src={src}
+            alt=""
+            style={{ ...base, objectFit: 'cover', background: '#f5f0e6' }}
+            onError={() => setPhotoFailed((p) => ({ ...p, [key]: true }))}
+          />
+        ) : (
+          <span
+            style={{
+              ...base,
+              background: '#f5f0e6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#886c44',
+              fontSize: Math.round(size * 0.6),
+              lineHeight: 1,
+            }}
+            aria-hidden="true"
+          >
+            &#9733;
+          </span>
+        );
+        return wrap ? <span style={wrap}>{inner}</span> : inner;
+      };
 
       const loadLogs = async () => {
         try {
@@ -1156,8 +1226,9 @@ const { useState, useEffect, useRef } = React;
                           }
                           openActionSelect(name, 'volunteer-select');
                         }}
-                        className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-5 sm:p-6 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
+                        className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-5 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
                       >
+                        {!isOther && <VolunteerAvatar name={name} size={40} />}
                         {isCheckedIn && <span className="text-lg sm:text-xl font-bold" style={{ color: '#FFD700' }}>&#9733;</span>}
                         <span>{name}</span>
                       </button>
@@ -1299,6 +1370,11 @@ for (let i = 0; i < todayLogs.length; i++) {
                 <ArrowLeft className="mr-2" /> Back
               </button>
 
+              {selectedVolunteer !== 'other' && (
+                <div className="flex justify-center mb-2 sm:mb-3">
+                  <VolunteerAvatar name={volunteerName} size={80} />
+                </div>
+              )}
               <h2 className="text-2xl sm:text-4xl font-serif text-stone-800 mb-2 sm:mb-4 text-center font-semibold px-2">
                 {volunteerName}
               </h2>
@@ -2497,10 +2573,14 @@ for (let i = 0; i < todayLogs.length; i++) {
               </button>
               <div className="text-center">
                 <div className="flex justify-center mb-4">
-                  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-                    <circle cx="36" cy="36" r="36" fill="#dcfce7"/>
-                    <path d="M20 37l12 12 20-22" stroke="#16a34a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  {lastConfirmation?.type === 'volunteer' && lastConfirmation?.name ? (
+                    <VolunteerAvatar name={lastConfirmation.name} size={84} ring="#dcfce7" />
+                  ) : (
+                    <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+                      <circle cx="36" cy="36" r="36" fill="#dcfce7"/>
+                      <path d="M20 37l12 12 20-22" stroke="#16a34a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
                 </div>
                 <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Success!</h2>
                 <p className="text-xl text-stone-600 mt-4">
@@ -2565,10 +2645,14 @@ for (let i = 0; i < todayLogs.length; i++) {
               </button>
               <div className="text-center">
                 <div className="flex justify-center mb-4">
-                  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-                    <circle cx="36" cy="36" r="36" fill="#dcfce7"/>
-                    <path d="M20 37l12 12 20-22" stroke="#16a34a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  {lastConfirmation?.type === 'volunteer' && lastConfirmation?.name ? (
+                    <VolunteerAvatar name={lastConfirmation.name} size={84} ring="#dcfce7" />
+                  ) : (
+                    <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+                      <circle cx="36" cy="36" r="36" fill="#dcfce7"/>
+                      <path d="M20 37l12 12 20-22" stroke="#16a34a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
                 </div>
                 <h2 className="text-4xl font-serif text-emerald-600 font-semibold">Successfully Checked Out!</h2>
                 <div className="mt-6 sm:mt-8 bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 sm:p-8 inline-block">
