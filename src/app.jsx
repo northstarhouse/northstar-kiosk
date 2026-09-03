@@ -26,6 +26,7 @@ const { useState, useEffect, useRef } = React;
       'events team': 'events',
       'events': 'events',
       'event support': 'events',
+      'fundraising': 'fundraising',
       'volunteer exchange': 'volunteerExchange',
     };
     // Statuses that still show up on the kiosk. Everything else (Inactive,
@@ -153,6 +154,7 @@ const { useState, useEffect, useRef } = React;
         docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
         interiors: ['Bec Freeman', 'Lois Hensel', 'Lisa Robinson'],
         events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco', 'Nancy Sanders'],
+        fundraising: ['Kaelen Jennings', 'Phred Swain-Sugarman'],
         volunteerExchange: ['Vince LoFranco', 'Diana Cushway', 'Other']
       };
       const dutyAreas = dynamicDutyAreas || DEFAULT_DUTY_AREAS;
@@ -164,6 +166,7 @@ const { useState, useEffect, useRef } = React;
         docents: 'Docent',
         interiors: 'Interiors',
         events: 'Events Team',
+        fundraising: 'Fundraising',
         volunteerExchange: 'Volunteer Exchange',
         other: 'Other'
       };
@@ -187,7 +190,7 @@ const { useState, useEffect, useRef } = React;
           const rows = await res.json();
 
           const photos = {};
-          const areas = { construction: [], board: [], landscape: [], docents: [], interiors: [], events: [], volunteerExchange: [] };
+          const areas = { construction: [], board: [], landscape: [], docents: [], interiors: [], events: [], fundraising: [], volunteerExchange: [] };
 
           (rows || []).forEach((r) => {
             const full = ((r['First Name'] || '').trim() + ' ' + (r['Last Name'] || '').trim()).replace(/\s+/g, ' ').trim();
