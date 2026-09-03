@@ -1226,11 +1226,13 @@ const { useState, useEffect, useRef } = React;
                           }
                           openActionSelect(name, 'volunteer-select');
                         }}
-                        className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-4 sm:p-5 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
+                        className="bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 p-3 sm:p-4 pl-4 sm:pl-5 rounded-3xl sm:rounded-full border-2 border-stone-300 text-base sm:text-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-3 text-left"
                       >
-                        {!isOther && <VolunteerAvatar name={name} size={40} />}
-                        {isCheckedIn && <span className="text-lg sm:text-xl font-bold" style={{ color: '#FFD700' }}>&#9733;</span>}
-                        <span>{name}</span>
+                        {isOther
+                          ? <span className="w-10 h-10 shrink-0" />
+                          : <VolunteerAvatar name={name} size={40} />}
+                        <span className="flex-1 min-w-0 truncate">{name}</span>
+                        {isCheckedIn && <span className="text-lg sm:text-xl font-bold shrink-0" style={{ color: '#FFD700' }}>&#9733;</span>}
                       </button>
                     );
                   })}
