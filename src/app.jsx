@@ -215,10 +215,16 @@ const { useState, useEffect, useRef } = React;
           //     (so long-time volunteers keep their familiar spot);
           //  2. then new people from the portal — those with a photo, then
           //     those without — each group alphabetical.
+          //  3. anyone in BOTTOM_OF_LIST always sinks to the very end.
+          const BOTTOM_OF_LIST = ['louis viani', 'chuck carroll'];
           Object.keys(areas).forEach((k) => {
             const orig = DEFAULT_DUTY_AREAS[k] || [];
             const origIdx = (n) => orig.findIndex((o) => nameKey(o) === nameKey(n));
             areas[k].sort((a, b) => {
+              const za = BOTTOM_OF_LIST.includes(nameKey(a)) ? 1 : 0;
+              const zb = BOTTOM_OF_LIST.includes(nameKey(b)) ? 1 : 0;
+              if (za !== zb) return za - zb;
+
               const ia = origIdx(a);
               const ib = origIdx(b);
               if (ia !== -1 || ib !== -1) {
