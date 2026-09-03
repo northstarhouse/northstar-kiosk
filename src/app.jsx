@@ -1098,10 +1098,8 @@ const { useState, useEffect, useRef } = React;
                   <div className="space-y-4">
                     {onSite.map((v) => (
                       <div key={v.name} className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-stone-200 pb-3 sm:pb-4 last:border-0 gap-3">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="#886c44" aria-hidden="true" className="flex-shrink-0">
-                            <path d="M12 3.5l2.6 5.9L21 12l-6.4 2.6L12 20.5l-2.6-5.9L3 12l6.4-2.6L12 3.5z" />
-                          </svg>
+                        <div className="flex items-center gap-3">
+                          <VolunteerAvatar name={v.name} size={44} />
                           <div>
                             <div className="text-lg sm:text-xl font-semibold text-stone-800">{v.name}</div>
                             <div className="text-sm sm:text-base text-stone-600">
