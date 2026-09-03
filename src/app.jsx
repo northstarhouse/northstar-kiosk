@@ -148,14 +148,14 @@ const { useState, useEffect, useRef } = React;
 
       // Fallback roster, used only until the portal roster loads (or if it fails).
       const DEFAULT_DUTY_AREAS = {
-        construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
+        construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Viani', 'Bob Parker', 'Vince Franco', 'Kenneth Hunter', 'Frank Robinson'],
         board: ['Paula Campbell', 'Wyn Spiller', 'Ken Underwood', 'Rick Panos', 'Jeff Cereghino', 'Rich Hill'],
-        landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes', 'Debbie Stackhouse', 'Bob Aha', 'Rob Shulman', 'Sherian Kutzera'],
-        docents: ['Rich', 'Susan', 'Tony', 'Gailynne', 'Zoe Toffaleti'],
+        landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes', 'Debbie Stackhouse', 'Robert Aha', 'Robert Shulman', 'Sherian Kutzera'],
+        docents: ['Rich Hill', 'Susan', 'Tony', 'Gailynne Bouret', 'Zoe Toffaleti'],
         interiors: ['Bec Freeman', 'Lois Hensel', 'Lisa Robinson'],
-        events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco', 'Nancy Sanders'],
+        events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince Franco', 'Nancy Sanders'],
         fundraising: ['Kaelen Jennings', 'Phred Swain-Sugarman'],
-        volunteerExchange: ['Vince LoFranco', 'Diana Cushway', 'Other']
+        volunteerExchange: ['Vince Franco', 'Diana Cushway', 'Other']
       };
       const dutyAreas = dynamicDutyAreas || DEFAULT_DUTY_AREAS;
 
@@ -210,7 +210,28 @@ const { useState, useEffect, useRef } = React;
 
           setVolunteerPhotos(photos);
 
-          Object.keys(areas).forEach((k) => areas[k].sort((a, b) => a.localeCompare(b)));
+          // Ordering per area:
+          //  1. everyone from the bundled list first, in that exact order
+          //     (so long-time volunteers keep their familiar spot);
+          //  2. then new people from the portal — those with a photo, then
+          //     those without — each group alphabetical.
+          Object.keys(areas).forEach((k) => {
+            const orig = DEFAULT_DUTY_AREAS[k] || [];
+            const origIdx = (n) => orig.findIndex((o) => nameKey(o) === nameKey(n));
+            areas[k].sort((a, b) => {
+              const ia = origIdx(a);
+              const ib = origIdx(b);
+              if (ia !== -1 || ib !== -1) {
+                if (ia === -1) return 1;
+                if (ib === -1) return -1;
+                return ia - ib;
+              }
+              const pa = photos[nameKey(a)] ? 0 : 1;
+              const pb = photos[nameKey(b)] ? 0 : 1;
+              if (pa !== pb) return pa - pb;
+              return a.localeCompare(b);
+            });
+          });
           areas.volunteerExchange.push('Other');
           // Only take over from the bundled list if the roster actually loaded.
           if (Object.values(areas).some((arr) => arr.length > 1)) setDynamicDutyAreas(areas);
