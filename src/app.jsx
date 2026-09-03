@@ -11,6 +11,27 @@ const { useState, useEffect, useRef } = React;
     };
     const nameKey = (s) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
+    // Maps a "Team" token from the 2026 Volunteers table to a kiosk duty area.
+    // A volunteer can carry several pipe-separated teams and land in each area.
+    const TEAM_TO_AREA = {
+      'construction': 'construction',
+      'board member': 'board',
+      'board': 'board',
+      'grounds': 'landscape',
+      'landscaping': 'landscape',
+      'landscape': 'landscape',
+      'docent': 'docents',
+      'docents': 'docents',
+      'interiors': 'interiors',
+      'events team': 'events',
+      'events': 'events',
+      'event support': 'events',
+      'volunteer exchange': 'volunteerExchange',
+    };
+    // Statuses that still show up on the kiosk. Everything else (Inactive,
+    // Interested, …) is dropped from the lists.
+    const ACTIVE_STATUSES = new Set(['active', 'on-call supporter']);
+
     // Icon components
     const ArrowLeft = () => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -103,6 +124,7 @@ const { useState, useEffect, useRef } = React;
       const [logs, setLogs] = useState([]);
       const [volunteerPhotos, setVolunteerPhotos] = useState({}); // nameKey -> thumbnail URL
       const [photoFailed, setPhotoFailed] = useState({});         // nameKey -> true when the img 404s
+      const [dynamicDutyAreas, setDynamicDutyAreas] = useState(null); // built from the portal roster
 
       const [selectedVolunteerForHours, setSelectedVolunteerForHours] = useState(null);
       const [commentText, setCommentText] = useState('');
@@ -123,7 +145,8 @@ const { useState, useEffect, useRef } = React;
       const SUPABASE_URL = 'https://uvzwhhwzelaelfhfkvdb.supabase.co';
       const SUPABASE_ANON_KEY = 'sb_publishable_EbFMfEbyEp3gASl-GZm3tQ_LnPEe5do';
 
-      const dutyAreas = {
+      // Fallback roster, used only until the portal roster loads (or if it fails).
+      const DEFAULT_DUTY_AREAS = {
         construction: ['Bec Freeman', 'Tom Milam', 'Andy Wright', 'Gary Emanuel', 'Mike French', 'Desert Powell', 'Dennis Westcot', 'Jim Borrelli', 'Mark Hermes', 'Chuck Carroll', 'Mike Frasu', 'Larry Joseph', 'Louis Vianni', 'Bob Parker', 'Vince LoFranco', 'Kenneth Hunter', 'Frank Robinson'],
         board: ['Paula Campbell', 'Wyn Spiller', 'Ken Underwood', 'Rick Panos', 'Jeff Cereghino', 'Rich Hill'],
         landscape: ['Mike Frasu', 'Nadine Kapper', 'Deanna Bloom', 'Bob Parker', 'Mark Hermes', 'Debbie Stackhouse', 'Bob Aha', 'Rob Shulman', 'Sherian Kutzera'],
@@ -132,6 +155,7 @@ const { useState, useEffect, useRef } = React;
         events: ['Gerrie Kopec', 'Barb Kusha', 'Derek Cheeseman', 'Vince LoFranco', 'Nancy Sanders'],
         volunteerExchange: ['Vince LoFranco', 'Diana Cushway', 'Other']
       };
+      const dutyAreas = dynamicDutyAreas || DEFAULT_DUTY_AREAS;
 
       const dutyLabels = {
         construction: 'Construction',
@@ -146,27 +170,49 @@ const { useState, useEffect, useRef } = React;
 
       useEffect(() => {
         loadLogs();
-        loadVolunteerPhotos();
+        loadVolunteers();
       }, []);
 
-      const loadVolunteerPhotos = async () => {
+      // One fetch of the portal's 2026 Volunteers table drives both the photo
+      // bubbles and the duty-area rosters: active volunteers land in the areas
+      // their Team maps to; inactive/interested volunteers drop off entirely.
+      const loadVolunteers = async () => {
         try {
           const res = await fetch(
             SUPABASE_URL + '/rest/v1/' + encodeURIComponent('2026 Volunteers') +
-              '?select=' + encodeURIComponent('"First Name","Last Name","Picture URL"'),
+              '?select=' + encodeURIComponent('"First Name","Last Name","Picture URL","Team","Status"'),
             { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } }
           );
           if (!res.ok) return;
           const rows = await res.json();
-          const map = {};
+
+          const photos = {};
+          const areas = { construction: [], board: [], landscape: [], docents: [], interiors: [], events: [], volunteerExchange: [] };
+
           (rows || []).forEach((r) => {
-            const full = ((r['First Name'] || '').trim() + ' ' + (r['Last Name'] || '').trim()).trim();
+            const full = ((r['First Name'] || '').trim() + ' ' + (r['Last Name'] || '').trim()).replace(/\s+/g, ' ').trim();
+            if (!full) return;
+
             const thumb = driveThumb(r['Picture URL']);
-            if (full && thumb) map[nameKey(full)] = thumb;
+            if (thumb) photos[nameKey(full)] = thumb;
+
+            if (!ACTIVE_STATUSES.has((r['Status'] || '').trim().toLowerCase())) return;
+            const hit = new Set();
+            (r['Team'] || '').split('|').forEach((tok) => {
+              const area = TEAM_TO_AREA[tok.trim().toLowerCase()];
+              if (area) hit.add(area);
+            });
+            hit.forEach((area) => { if (!areas[area].includes(full)) areas[area].push(full); });
           });
-          setVolunteerPhotos(map);
+
+          setVolunteerPhotos(photos);
+
+          Object.keys(areas).forEach((k) => areas[k].sort((a, b) => a.localeCompare(b)));
+          areas.volunteerExchange.push('Other');
+          // Only take over from the bundled list if the roster actually loaded.
+          if (Object.values(areas).some((arr) => arr.length > 1)) setDynamicDutyAreas(areas);
         } catch (e) {
-          console.log('Could not load volunteer photos:', e);
+          console.log('Could not load volunteers:', e);
         }
       };
 
