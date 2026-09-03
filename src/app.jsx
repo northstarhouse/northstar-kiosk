@@ -205,11 +205,13 @@ const { useState, useEffect, useRef } = React;
               const area = TEAM_TO_AREA[tok.trim().toLowerCase()];
               if (area) hit.add(area);
             });
-            // Board members only appear under Board Member — the one exception
-            // is Paula Campbell, who also stays on Grounds.
+            // Board members only appear under Board Member, except a few who
+            // also keep one other area.
+            const BOARD_ALSO_IN = { 'paula campbell': 'landscape', 'rich hill': 'docents' };
             if (hit.has('board')) {
               const keep = new Set(['board']);
-              if (nameKey(full) === 'paula campbell' && hit.has('landscape')) keep.add('landscape');
+              const also = BOARD_ALSO_IN[nameKey(full)];
+              if (also && hit.has(also)) keep.add(also);
               hit = keep;
             }
             hit.forEach((area) => { if (!areas[area].includes(full)) areas[area].push(full); });
